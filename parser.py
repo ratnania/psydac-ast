@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from sympy import IndexedBase
 from sympy import Mul
 from sympy import symbols, Symbol
@@ -11,6 +13,18 @@ from sympde.topology import element_of
 from nodes import BasisAtom
 from nodes import LocalQuadrature
 from nodes import LocalBasis
+
+
+#==============================================================================
+def index_of(expr, dim):
+    if isinstance(expr, LocalQuadrature):
+        return symbols('i_quad_1:%d'%(dim+1))
+
+    elif isinstance(expr, LocalBasis):
+        return symbols('i_basis_1:%d'%(dim+1))
+
+    else:
+        raise NotImplementedError('TODO')
 
 #==============================================================================
 class Parser(object):
@@ -26,29 +40,12 @@ class Parser(object):
     def doit(self, expr):
         return self._visit(expr)
 
-    def index_of(self, expr):
-        # ...
-        settings = self.settings.copy()
-        dim      = settings.pop('dim', None)
-        if dim is None:
-            raise ValueError('dim not provided')
-        # ...
-
-        if isinstance(expr, LocalQuadrature):
-            return symbols('i_quad_1:%d'%(dim+1))
-
-        elif isinstance(expr, LocalBasis):
-            return symbols('i_basis_1:%d'%(dim+1))
-
-        else:
-            raise NotImplementedError('TODO')
-
-    def _visit(self, expr):
+    def _visit(self, expr, **kwargs):
         classes = type(expr).__mro__
         for cls in classes:
             annotation_method = '_visit_' + cls.__name__
             if hasattr(self, annotation_method):
-                return getattr(self, annotation_method)(expr)
+                return getattr(self, annotation_method)(expr, **kwargs)
 
         # Unknown object, we raise an error.
         raise NotImplementedError('{}'.format(type(expr)))
@@ -103,9 +100,19 @@ class Parser(object):
         dim      = settings.pop('dim', None)
         tests    = settings.pop('tests', [])
         trials   = settings.pop('trials', [])
+        indices  = settings.pop('indices', None)
 
         if dim is None:
             raise ValueError('dim not provided')
+
+        if ( indices is None ) or not isinstance(indices, (dict, OrderedDict)):
+            raise ValueError('indices must be a dictionary')
+
+        if not( 'quad' in indices.keys() ):
+            raise ValueError('quad not provided for indices')
+
+        if not( 'basis' in indices.keys() ):
+            raise ValueError('basis not provided for indices')
         # ...
 
         # ...
@@ -128,14 +135,8 @@ class Parser(object):
                  for i in range(dim)]
         # ...
 
-        l_quad  = LocalQuadrature()
-        l_basis = LocalBasis()
-
-        indices_basis = self.index_of(l_basis)
-        indices_quad = self.index_of(l_quad)
-
         args = [b[i, d, q]
-                for b, i, d, q in zip(basis, indices_basis, orders, indices_quad)]
+                for b, i, d, q in zip(basis, indices['basis'], orders, indices['quad'])]
         rhs = Mul(*args)
 
         return rhs

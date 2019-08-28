@@ -23,6 +23,7 @@ from nodes import BasisAtom
 from nodes import BasisValue
 
 from parser import parse
+from parser import index_of
 
 # ... abstract model
 domain = Square()
@@ -44,8 +45,6 @@ basis   = Basis()
 
 #==============================================================================
 def test_nodes_2d_1():
-    print('============== test_nodes_2d_1 ===============')
-
     # ...
     loop = Loop(quad, l_quad)
     print(loop)
@@ -63,8 +62,6 @@ def test_nodes_2d_1():
 
 #==============================================================================
 def test_nodes_2d_2():
-    print('============== test_nodes_2d_2 ===============')
-
     # ...
     loop = Loop(quad, l_quad)
     print(loop)
@@ -82,8 +79,6 @@ def test_nodes_2d_2():
 
 #==============================================================================
 def test_nodes_2d_3():
-    print('============== test_nodes_2d_3 ===============')
-
     expr = dx(u)
     lhs  = BasisAtom(expr)
     rhs  = BasisValue(expr)
@@ -92,7 +87,9 @@ def test_nodes_2d_3():
     assert(parse(lhs) == Symbol('u_x'))
 
     stmt = Assign(lhs, rhs)
-    stmt = parse(stmt, dim=domain.dim, tests=[v], trials=[u])
+    indices = {'basis': index_of(l_basis, domain.dim),
+               'quad':  index_of(l_quad, domain.dim)}
+    stmt = parse(stmt, dim=domain.dim, tests=[v], trials=[u], indices=indices)
     print(stmt)
 
     print()
