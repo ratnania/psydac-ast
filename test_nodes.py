@@ -87,11 +87,38 @@ def test_nodes_2d_3():
     assert(parse(lhs) == Symbol('u_x'))
 
     stmt = Assign(lhs, rhs)
-    indices = {'basis': index_of(l_basis, domain.dim),
-               'quad':  index_of(l_quad, domain.dim)}
-    stmt = parse(stmt, dim=domain.dim, tests=[v], trials=[u], indices=indices)
+    indices = {'basis': index_of(basis, domain.dim),
+               'quad':  index_of(quad, domain.dim)}
+    settings = {'dim':     domain.dim,
+                'tests':   [v],
+                'trials':  [u],
+                'indices': indices}
+    stmt = parse(stmt, settings)
     print(stmt)
 
+#==============================================================================
+def test_nodes_2d_4():
+    expr = dx(u)
+    lhs  = BasisAtom(expr)
+    rhs  = BasisValue(expr)
+
+    assert(lhs.atom == u)
+    assert(parse(lhs) == Symbol('u_x'))
+
+    indices = {'basis': index_of(basis, domain.dim),
+               'quad':  index_of(quad, domain.dim)}
+
+    stmt = Assign(lhs, rhs)
+    loop = Loop(quad,  l_quad, [stmt])
+    loop = Loop(basis, l_basis, [loop])
+    settings = {'dim':     domain.dim,
+                'tests':   [v],
+                'trials':  [u],
+                'indices': indices}
+    stmt = parse(loop, settings)
+
+#    stmt = parse(stmt, dim=domain.dim, tests=[v], trials=[u], indices=indices)
+#    print(stmt)
     print()
 
 
@@ -109,4 +136,5 @@ def teardown_function():
 
 #test_nodes_2d_1()
 #test_nodes_2d_2()
-test_nodes_2d_3()
+#test_nodes_2d_3()
+test_nodes_2d_4()
