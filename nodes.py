@@ -79,6 +79,43 @@ class Loop(BaseNode):
         return self._args[2]
 
 #==============================================================================
+class EnumerateLoop(BaseNode):
+    """
+    class to describe an enumerated loop.
+    """
+
+    def __new__(cls, indices, lengths, iterator, iterable, stmts):
+        # TODO sympy conform for indices, iterator, interable
+        # ...
+        if not isinstance(stmts, (tuple, list, Tuple)):
+            raise TypeError('stmts must be a tuple, list or Tuple')
+
+        stmts = Tuple(*stmts)
+        # ...
+
+        return Basic.__new__(cls, indices, lengths, iterator, iterable, stmts)
+
+    @property
+    def indices(self):
+        return self._args[0]
+
+    @property
+    def lengths(self):
+        return self._args[1]
+
+    @property
+    def iterator(self):
+        return self._args[2]
+
+    @property
+    def iterable(self):
+        return self._args[3]
+
+    @property
+    def stmts(self):
+        return self._args[4]
+
+#==============================================================================
 class Grid(Generator):
     """
     """
@@ -88,43 +125,109 @@ class Grid(Generator):
 class Element(Iterator):
     """
     """
-    pass
+    def __new__(cls, grid):
+        if not( isinstance(grid, Grid) ):
+            raise TypeError('Expecting a Grid')
+
+        return Basic.__new__(cls, grid)
+
+    @property
+    def grid(self):
+        return self._args[0]
 
 #==============================================================================
 class GlobalQuadrature(Generator):
     """
     """
-    pass
+    def __new__(cls, grid):
+        if not( isinstance(grid, Grid) ):
+            raise TypeError('Expecting a Grid')
+
+        return Basic.__new__(cls, grid)
+
+    @property
+    def grid(self):
+        return self._args[0]
 
 #==============================================================================
 class LocalQuadrature(Iterator, Generator):
     """
     """
-    pass
+    _rank = 1
+    def __new__(cls, element):
+        if not( isinstance(element, Element) ):
+            raise TypeError('Expecting a Element')
+
+        return Basic.__new__(cls, element)
+
+    @property
+    def parent(self):
+        return self._args[0]
+
+    @property
+    def rank(self):
+        return self._rank
 
 #==============================================================================
 class Quadrature(Iterator):
     """
     """
-    pass
+    def __new__(cls, quad):
+        if not( isinstance(quad, LocalQuadrature) ):
+            raise TypeError('Expecting a LocalQuadrature')
+
+        return Basic.__new__(cls, quad)
+
+    @property
+    def parent(self):
+        return self._args[0]
 
 #==============================================================================
 class GlobalBasis(Generator):
     """
     """
-    pass
+    def __new__(cls, grid):
+        if not( isinstance(grid, Grid) ):
+            raise TypeError('Expecting a Grid')
+
+        return Basic.__new__(cls, grid)
+
+    @property
+    def grid(self):
+        return self._args[0]
 
 #==============================================================================
 class LocalBasis(Iterator, Generator):
     """
     """
-    pass
+    _rank = 3
+    def __new__(cls, element):
+        if not( isinstance(element, Element) ):
+            raise TypeError('Expecting a Element')
+
+        return Basic.__new__(cls, element)
+
+    @property
+    def parent(self):
+        return self._args[0]
+
+    @property
+    def rank(self):
+        return self._rank
 
 #==============================================================================
 class Basis(Iterator):
     """
     """
-    pass
+    def __new__(cls, basis):
+        if not( isinstance(basis, LocalQuadrature) ):
+            raise TypeError('Expecting a LocalQuadrature')
+
+        return Basic.__new__(cls, basis)
+
+    @property
+    def parent(self):
+        return self._args[0]
 
 #==============================================================================
 class Evaluation(BaseNode):

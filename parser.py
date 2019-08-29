@@ -5,8 +5,9 @@ from sympy import Mul
 from sympy import symbols, Symbol
 from sympy.core.containers import Tuple
 
+from pyccel.ast import Range, Product, For
 from pyccel.ast import Assign
-from pyccel.ast.core import Variable, IndexedVariable
+from pyccel.ast import Variable, IndexedVariable
 
 from sympde.topology import SymbolicExpr
 from sympde.topology.derivatives import get_index_derivatives
@@ -17,6 +18,7 @@ from nodes import Quadrature
 from nodes import Basis
 from nodes import LocalQuadrature
 from nodes import LocalBasis
+from nodes import EnumerateLoop
 
 #==============================================================================
 def index_of(expr, dim):
@@ -25,6 +27,17 @@ def index_of(expr, dim):
 
     elif isinstance(expr, Basis):
         return symbols('i_basis_1:%d'%(dim+1))
+
+    else:
+        raise NotImplementedError('TODO')
+
+#==============================================================================
+def length_of(expr, dim):
+    if isinstance(expr, LocalQuadrature):
+        return symbols('k1:%d'%(dim+1))
+
+    elif isinstance(expr, LocalBasis):
+        return symbols('p1:%d'%(dim+1))
 
     else:
         raise NotImplementedError('TODO')
@@ -83,12 +96,51 @@ class Parser(object):
         generator = self._visit(expr.generator)
         stmts     = self._visit(expr.stmts)
 
-        print('> iterator  = ', iterator)
-        print('> generator = ', generator)
-        print('> stmts     = ', stmts    )
+#        print('*** Loop')
+#        print('> iterator  = ', iterator)
+#        print('> generator = ', generator)
+#        print('> stmts     = ', stmts    )
 
-        expr = expr # TODO
-        return expr
+        # create an enumerate loop
+        stmt = EnumerateLoop(iterator['indices'], generator['length'],
+                             iterator['this'], generator['this'], stmts)
+
+        return self._visit(stmt)
+
+    def _visit_EnumerateLoop(self, expr):
+        indices   = expr.indices
+        lengths   = expr.lengths
+        iterator  = expr.iterator
+        generator = expr.iterable
+        stmts     = expr.stmts
+
+#        print('*** EnumerateLoop')
+#        print('> indices   = ', indices)
+#        print('> lengths   = ', lengths)
+#        print('> iterator  = ', iterator)
+#        print('> generator = ', generator)
+#        print('> stmts     = ', stmts)
+
+
+        body = []
+        for this, target in zip(iterator, generator):
+            # TODO remove
+            if not isinstance(this, (tuple, list, Tuple)):
+                this = [this]
+
+            # TODO remove
+            if not isinstance(target, (tuple, list, Tuple)):
+                target = [target]
+
+            for i, lhs, rhs in zip(indices, this, target):
+                body += [Assign(lhs, rhs[i])]
+
+        for stmt in stmts:
+            body += [stmt]
+
+        ranges = [Range(l) for l in lengths]
+        target = Product(*ranges)
+        return For(indices, target, body)
 
     def _visit_Grid(self, expr):
         raise NotImplementedError('TODO')
@@ -100,20 +152,34 @@ class Parser(object):
         raise NotImplementedError('TODO')
 
     def _visit_LocalQuadrature(self, expr):
-        dim = self.dim
+        dim  = self.dim
+        rank = expr.rank
+        length   = length_of(expr, dim)
 
-        names = 'points_1:%s'%(dim+1)
-        points   = variables(names, dtype='real', rank=2, cls=IndexedVariable)
+        names = 'local_x1:%s'%(dim+1)
+        points   = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
 
-        names = 'weights_1:%s'%(dim+1)
-        weights  = variables(names, dtype='real', rank=2, cls=IndexedVariable)
+        names = 'local_w1:%s'%(dim+1)
+        weights  = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
 
-        return points, weights
+        this = (points, weights)
+        return {'length': length, 'this': this}
 
     def _visit_Quadrature(self, expr):
+        # when visiting an iterator, we will return an index and the target
+        # as if we were using enumerate
         # TODO return a tuple? as if it was an enumerate
+        dim  = self.dim
         indices = index_of(expr, self.dim)
-        return indices
+
+        names   = 'x1:%s'%(dim+1)
+        points  = variables(names, dtype='real', cls=Variable)
+
+        names   = 'w1:%s'%(dim+1)
+        weights = variables(names, dtype='real', cls=Variable)
+
+        this = (points, weights)
+        return {'indices': indices, 'this': this}
 
     def _visit_GlobalBasis(self, expr):
         raise NotImplementedError('TODO')
@@ -121,6 +187,8 @@ class Parser(object):
     def _visit_LocalBasis(self, expr):
         # TODO return a tuple? as if it was an enumerate
         dim = self.dim
+        rank = expr.rank
+        length = length_of(expr, dim)
         # TODO
         ln = 1
 
@@ -129,14 +197,17 @@ class Parser(object):
         else:
             names = 'trial_basis_1:%s'%(dim+1)
 
-        basis = variables(names, dtype='real', rank=4, cls=IndexedVariable)
+        basis = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
 
-        return basis
+        return {'length': length, 'this': basis}
 
     def _visit_Basis(self, expr):
         # TODO return a tuple? as if it was an enumerate
         indices = index_of(expr, self.dim)
-        return indices
+
+        # TODO
+        this = (Symbol('Bs'),)
+        return {'indices': indices, 'this': this}
 
     def _visit_FieldEvaluation(self, expr):
         raise NotImplementedError('TODO')

@@ -3,6 +3,8 @@
 from sympy import Symbol
 
 from pyccel.ast import Assign
+# TODO remove
+from pyccel.codegen.printing.pycode import pycode
 
 from sympde.calculus import grad, dot
 from sympde.topology import (dx, dy, dz)
@@ -34,13 +36,13 @@ expr   = dot(grad(v), grad(u))
 
 # ...
 grid    = Grid()
-element = Element()
-g_quad  = GlobalQuadrature()
-l_quad  = LocalQuadrature()
-quad    = Quadrature()
-g_basis = GlobalBasis()
-l_basis = LocalBasis()
-basis   = Basis()
+element = Element(grid)
+g_quad  = GlobalQuadrature(grid)
+l_quad  = LocalQuadrature(element)
+quad    = Quadrature(l_quad)
+g_basis = GlobalBasis(grid)
+l_basis = LocalBasis(element)
+basis   = Basis(l_quad)
 # ...
 
 #==============================================================================
@@ -115,7 +117,9 @@ def test_nodes_2d_4():
                 'tests':   [v],
                 'trials':  [u],
                 'indices': indices}
+    print(loop)
     stmt = parse(loop, settings)
+    print(pycode(stmt))
 
 #    stmt = parse(stmt, dim=domain.dim, tests=[v], trials=[u], indices=indices)
 #    print(stmt)
