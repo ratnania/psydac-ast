@@ -22,211 +22,160 @@ class FunctionalArity(ArityType):
     pass
 
 #==============================================================================
+class IndexNode(with_metaclass(Singleton, Basic)):
+    """Base class representing one index of an iterator"""
+    pass
+
+class IndexElement(IndexNode):
+    pass
+
+class IndexPoint(IndexNode):
+    pass
+
+class IndexDof(IndexNode):
+    pass
+
+index_element = IndexElement()
+index_point   = IndexPoint()
+index_dof     = IndexDof()
+
+#==============================================================================
 class BaseNode(Basic):
     """
     """
     pass
 
 #==============================================================================
-class Iterator(BaseNode):
+class Element(BaseNode):
     """
     """
     pass
+
+
+
+#==============================================================================
+class Iterator(BaseNode):
+    """
+    """
+    def __new__(cls, target, dummies=None):
+        if not dummies is None:
+            if not isinstance(dummies, (list, tuple, Tuple)):
+                dummies = [dummies]
+            dummies = Tuple(*dummies)
+
+        return Basic.__new__(cls, target, dummies)
+
+    @property
+    def target(self):
+        return self._args[0]
+
+    @property
+    def dummies(self):
+        return self._args[1]
 
 #==============================================================================
 class Generator(BaseNode):
     """
     """
-    pass
+    def __new__(cls, target, dummies):
+        if not isinstance(dummies, (list, tuple, Tuple)):
+            dummies = [dummies]
+        dummies = Tuple(*dummies)
 
-#==============================================================================
-class Loop(BaseNode):
-    """
-    class to describe a loop of an iterator over a generator.
-    """
-
-    def __new__(cls, iterator, generator, stmts=None):
-        # ...
-        if not( isinstance(iterator, Iterator) ):
-            raise TypeError('Expecting an Iterator')
-
-        if not( isinstance(generator, Generator) ):
-            raise TypeError('Expecting a Generator')
-        # ...
-
-        # ...
-        if stmts is None:
-            stmts = []
-
-        elif not isinstance(stmts, (tuple, list, Tuple)):
-            raise TypeError('stmts must be a tuple, list or Tuple')
-
-        stmts = Tuple(*stmts)
-        # ...
-
-        return Basic.__new__(cls, iterator, generator, stmts)
+        return Basic.__new__(cls, target, dummies)
 
     @property
-    def iterator(self):
+    def target(self):
         return self._args[0]
 
     @property
-    def generator(self):
+    def dummies(self):
         return self._args[1]
 
-    @property
-    def stmts(self):
-        return self._args[2]
-
 #==============================================================================
-class EnumerateLoop(BaseNode):
-    """
-    class to describe an enumerated loop.
-    """
-
-    def __new__(cls, indices, lengths, iterator, iterable, stmts):
-        # TODO sympy conform for indices, iterator, interable
-        # ...
-        if not isinstance(stmts, (tuple, list, Tuple)):
-            raise TypeError('stmts must be a tuple, list or Tuple')
-
-        stmts = Tuple(*stmts)
-        # ...
-
-        return Basic.__new__(cls, indices, lengths, iterator, iterable, stmts)
-
-    @property
-    def indices(self):
-        return self._args[0]
-
-    @property
-    def lengths(self):
-        return self._args[1]
-
-    @property
-    def iterator(self):
-        return self._args[2]
-
-    @property
-    def iterable(self):
-        return self._args[3]
-
-    @property
-    def stmts(self):
-        return self._args[4]
-
-#==============================================================================
-class Grid(Generator):
+class Grid(BaseNode):
     """
     """
     pass
 
 #==============================================================================
-class Element(Iterator):
+class ArrayNode(BaseNode):
     """
     """
-    def __new__(cls, grid):
-        if not( isinstance(grid, Grid) ):
-            raise TypeError('Expecting a Grid')
-
-        return Basic.__new__(cls, grid)
+    _rank = None
 
     @property
-    def grid(self):
-        return self._args[0]
+    def rank(self):
+        return self._rank
 
 #==============================================================================
-class GlobalQuadrature(Generator):
+class ScalarNode(BaseNode):
     """
     """
-    def __new__(cls, grid):
-        if not( isinstance(grid, Grid) ):
-            raise TypeError('Expecting a Grid')
-
-        return Basic.__new__(cls, grid)
-
-    @property
-    def grid(self):
-        return self._args[0]
+    pass
 
 #==============================================================================
-class LocalQuadrature(Iterator, Generator):
+class GlobalQuadrature(ArrayNode):
+    """
+    """
+    _rank = 2
+
+#==============================================================================
+class LocalQuadrature(ArrayNode):
     """
     """
     _rank = 1
-    def __new__(cls, element):
-        if not( isinstance(element, Element) ):
-            raise TypeError('Expecting a Element')
-
-        return Basic.__new__(cls, element)
-
-    @property
-    def parent(self):
-        return self._args[0]
-
-    @property
-    def rank(self):
-        return self._rank
 
 #==============================================================================
-class Quadrature(Iterator):
+class Quadrature(ScalarNode):
     """
     """
-    def __new__(cls, quad):
-        if not( isinstance(quad, LocalQuadrature) ):
-            raise TypeError('Expecting a LocalQuadrature')
+    pass
 
-        return Basic.__new__(cls, quad)
+#==============================================================================
+class GlobalBasis(ArrayNode):
+    """
+    """
+    _rank = 4
+
+    def __new__(cls, target):
+        if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
+            raise TypeError('Expecting a scalar/vector test function')
+
+        return Basic.__new__(cls, target)
 
     @property
-    def parent(self):
+    def target(self):
         return self._args[0]
 
 #==============================================================================
-class GlobalBasis(Generator):
-    """
-    """
-    def __new__(cls, grid):
-        if not( isinstance(grid, Grid) ):
-            raise TypeError('Expecting a Grid')
-
-        return Basic.__new__(cls, grid)
-
-    @property
-    def grid(self):
-        return self._args[0]
-
-#==============================================================================
-class LocalBasis(Iterator, Generator):
+class LocalBasis(ArrayNode):
     """
     """
     _rank = 3
-    def __new__(cls, element):
-        if not( isinstance(element, Element) ):
-            raise TypeError('Expecting a Element')
 
-        return Basic.__new__(cls, element)
+    def __new__(cls, target):
+        if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
+            raise TypeError('Expecting a scalar/vector test function')
+
+        return Basic.__new__(cls, target)
 
     @property
-    def parent(self):
+    def target(self):
         return self._args[0]
 
-    @property
-    def rank(self):
-        return self._rank
-
 #==============================================================================
-class Basis(Iterator):
+class Basis(ScalarNode):
     """
     """
-    def __new__(cls, basis):
-        if not( isinstance(basis, LocalQuadrature) ):
-            raise TypeError('Expecting a LocalQuadrature')
+    def __new__(cls, target):
+        if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
+            raise TypeError('Expecting a scalar/vector test function')
 
-        return Basic.__new__(cls, basis)
+        return Basic.__new__(cls, target)
 
     @property
-    def parent(self):
+    def target(self):
         return self._args[0]
 
 #==============================================================================
@@ -305,16 +254,130 @@ class BasisValue(ValueNode):
         return self._args[0]
 
 #==============================================================================
-class CartesianProjection(BaseNode):
+class Loop(BaseNode):
     """
+    class to describe a loop of an iterator over a generator.
     """
-    def __new__(cls, expr, index):
-        return Basic.__new__(cls, expr, index)
+
+    def __new__(cls, iterator, generator, stmts=None):
+        # ...
+        if not( isinstance(iterator, Iterator) ):
+            raise TypeError('Expecting an Iterator')
+
+        if not( isinstance(generator, Generator) ):
+            raise TypeError('Expecting a Generator')
+        # ...
+
+        # ...
+        if stmts is None:
+            stmts = []
+
+        elif not isinstance(stmts, (tuple, list, Tuple)):
+            stmts = [stmts]
+
+        stmts = Tuple(*stmts)
+        # ...
+
+        return Basic.__new__(cls, iterator, generator, stmts)
 
     @property
-    def expr(self):
+    def iterator(self):
         return self._args[0]
 
     @property
-    def index(self):
+    def generator(self):
         return self._args[1]
+
+    @property
+    def stmts(self):
+        return self._args[2]
+
+#==============================================================================
+class EnumerateLoop(BaseNode):
+    """
+    class to describe an enumerated loop.
+    """
+
+    def __new__(cls, indices, lengths, iterator, iterable, stmts):
+        # TODO sympy conform for indices, iterator, interable
+        # ...
+        if not isinstance(stmts, (tuple, list, Tuple)):
+            raise TypeError('stmts must be a tuple, list or Tuple')
+
+        stmts = Tuple(*stmts)
+        # ...
+
+        return Basic.__new__(cls, indices, lengths, iterator, iterable, stmts)
+
+    @property
+    def indices(self):
+        return self._args[0]
+
+    @property
+    def lengths(self):
+        return self._args[1]
+
+    @property
+    def iterator(self):
+        return self._args[2]
+
+    @property
+    def iterable(self):
+        return self._args[3]
+
+    @property
+    def stmts(self):
+        return self._args[4]
+
+#==============================================================================
+class LoopGlobalQuadrature(BaseNode):
+    """
+    """
+    def __new__(cls, stmts):
+        g_quad  = GlobalQuadrature()
+        l_quad  = LocalQuadrature()
+
+        iterator  = Iterator(l_quad)
+        generator = Generator(g_quad, index_element)
+
+        return Loop.__new__(cls, iterator, generator, stmts)
+
+#==============================================================================
+class LoopLocalQuadrature(BaseNode):
+    """
+    """
+    def __new__(cls, stmts):
+        l_quad  = LocalQuadrature()
+        quad    = Quadrature()
+
+        iterator  = Iterator(quad)
+        generator = Generator(l_quad, index_point)
+
+        return Loop.__new__(cls, iterator, generator, stmts)
+
+#==============================================================================
+class LoopGlobalBasis(BaseNode):
+    """
+    """
+    def __new__(cls, target, stmts):
+        g_quad  = GlobalBasis(target)
+        l_quad  = LocalBasis(target)
+
+        iterator  = Iterator(l_quad)
+        # TODO
+        generator = Generator(g_quad, index_element)
+
+        return Loop.__new__(cls, iterator, generator, stmts)
+
+#==============================================================================
+class LoopLocalBasis(BaseNode):
+    """
+    """
+    def __new__(cls, target, stmts):
+        l_quad  = LocalBasis(target)
+        quad    = Basis(target)
+
+        iterator  = Iterator(quad)
+        generator = Generator(l_quad, index_dof)
+
+        return Loop.__new__(cls, iterator, generator, stmts)

@@ -264,6 +264,19 @@ class Parser(object):
         return rhs
     # ....................................................
 
+    def _visit_LoopGlobalQuadrature(self, expr):
+        raise NotImplementedError('TODO')
+
+    def _visit_LoopLocalQuadrature(self, expr):
+        raise NotImplementedError('TODO')
+
+    def _visit_LoopGlobalBasis(self, expr):
+        raise NotImplementedError('TODO')
+
+    def _visit_LoopLocalBasis(self, expr):
+        raise NotImplementedError('TODO')
+
+
 #==============================================================================
 def parse(expr, settings=None):
     return Parser(settings).doit(expr)

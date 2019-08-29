@@ -14,6 +14,8 @@ from sympde.topology import Square
 
 from nodes import Grid
 from nodes import Element
+from nodes import Iterator
+from nodes import Generator
 from nodes import Loop
 from nodes import GlobalQuadrature
 from nodes import LocalQuadrature
@@ -23,6 +25,13 @@ from nodes import LocalBasis
 from nodes import Basis
 from nodes import BasisAtom
 from nodes import BasisValue
+from nodes import index_element
+from nodes import index_point
+from nodes import index_dof
+from nodes import LoopLocalQuadrature
+from nodes import LoopGlobalQuadrature
+from nodes import LoopLocalBasis
+from nodes import LoopGlobalBasis
 
 from parser import parse
 from parser import index_of
@@ -36,48 +45,42 @@ expr   = dot(grad(v), grad(u))
 
 # ...
 grid    = Grid()
-element = Element(grid)
-g_quad  = GlobalQuadrature(grid)
-l_quad  = LocalQuadrature(element)
-quad    = Quadrature(l_quad)
-g_basis = GlobalBasis(grid)
-l_basis = LocalBasis(element)
-basis   = Basis(l_quad)
+element = Element()
+g_quad  = GlobalQuadrature()
+l_quad  = LocalQuadrature()
+quad    = Quadrature()
+g_basis = GlobalBasis(u)
+l_basis = LocalBasis(u)
+basis   = Basis(u)
 # ...
 
 #==============================================================================
 def test_nodes_2d_1():
     # ...
-    loop = Loop(quad, l_quad)
+    loop = LoopLocalQuadrature([])
     print(loop)
     # ...
 
     # ...
-    loop = Loop(l_quad, g_quad, [loop])
+    loop = LoopGlobalQuadrature(loop)
     print(loop)
     # ...
 
-    # ... TODO improve
-    loop = Loop(element, grid, [loop])
-    print(loop)
-    # ...
+    print()
 
 #==============================================================================
 def test_nodes_2d_2():
     # ...
-    loop = Loop(quad, l_quad)
+    loop = LoopLocalBasis(u, [])
     print(loop)
     # ...
 
     # ...
-    loop = Loop(l_basis, g_basis, [loop])
+    loop = LoopGlobalBasis(u, loop)
     print(loop)
     # ...
 
-    # ... TODO improve
-    loop = Loop(element, grid, [loop])
-    print(loop)
-    # ...
+    print()
 
 #==============================================================================
 def test_nodes_2d_3():
@@ -98,6 +101,8 @@ def test_nodes_2d_3():
     stmt = parse(stmt, settings)
     print(stmt)
 
+    print()
+
 #==============================================================================
 def test_nodes_2d_4():
     expr = dx(u)
@@ -111,8 +116,7 @@ def test_nodes_2d_4():
                'quad':  index_of(quad, domain.dim)}
 
     stmt = Assign(lhs, rhs)
-    loop = Loop(quad,  l_quad, [stmt])
-    loop = Loop(basis, l_basis, [loop])
+    loop = LoopLocalQuadrature(stmt)
     settings = {'dim':     domain.dim,
                 'tests':   [v],
                 'trials':  [u],
@@ -138,7 +142,7 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-#test_nodes_2d_1()
-#test_nodes_2d_2()
-#test_nodes_2d_3()
-test_nodes_2d_4()
+test_nodes_2d_1()
+test_nodes_2d_2()
+test_nodes_2d_3()
+#test_nodes_2d_4()
