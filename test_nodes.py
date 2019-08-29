@@ -34,7 +34,6 @@ from nodes import LoopLocalBasis
 from nodes import LoopGlobalBasis
 
 from parser import parse
-from parser import index_of
 
 # ... abstract model
 domain = Square()
@@ -91,38 +90,32 @@ def test_nodes_2d_3():
     assert(lhs.atom == u)
     assert(parse(lhs) == Symbol('u_x'))
 
-    stmt = Assign(lhs, rhs)
-    indices = {'basis': index_of(basis, domain.dim),
-               'quad':  index_of(quad, domain.dim)}
-    settings = {'dim':     domain.dim,
-                'tests':   [v],
-                'trials':  [u],
-                'indices': indices}
-    stmt = parse(stmt, settings)
-    print(stmt)
+#    stmt = Assign(lhs, rhs)
+#    indices = {'basis': index_of(basis, domain.dim),
+#               'quad':  index_of(quad, domain.dim)}
+#    settings = {'dim':     domain.dim,
+#                'tests':   [v],
+#                'trials':  [u],
+#                'indices': indices}
+#    stmt = parse(stmt, settings)
+#    print(stmt)
 
     print()
 
 #==============================================================================
 def test_nodes_2d_4():
-    expr = dx(u)
-    lhs  = BasisAtom(expr)
-    rhs  = BasisValue(expr)
+    loop = LoopLocalQuadrature([])
+    stmt = parse(loop, settings={'dim': domain.dim})
+    print(pycode(stmt))
+    print()
 
-    assert(lhs.atom == u)
-    assert(parse(lhs) == Symbol('u_x'))
-
-    indices = {'basis': index_of(basis, domain.dim),
-               'quad':  index_of(quad, domain.dim)}
-
-    stmt = Assign(lhs, rhs)
-    loop = LoopLocalQuadrature(stmt)
-    settings = {'dim':     domain.dim,
-                'tests':   [v],
-                'trials':  [u],
-                'indices': indices}
+#==============================================================================
+def test_nodes_2d_5():
+    loop = LoopLocalQuadrature([])
     print(loop)
-    stmt = parse(loop, settings)
+    stmt = parse(loop, settings={'dim': domain.dim})
+    print(stmt)
+    print()
     print(pycode(stmt))
 
 #    stmt = parse(stmt, dim=domain.dim, tests=[v], trials=[u], indices=indices)
@@ -142,7 +135,8 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-test_nodes_2d_1()
-test_nodes_2d_2()
-test_nodes_2d_3()
-#test_nodes_2d_4()
+#test_nodes_2d_1()
+#test_nodes_2d_2()
+#test_nodes_2d_3()
+test_nodes_2d_4()
+#test_nodes_2d_5()

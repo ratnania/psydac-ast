@@ -7,6 +7,8 @@ from sympy.core.containers import Tuple
 
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 
+from pyccel.ast import Slice
+
 #==============================================================================
 class ArityType(with_metaclass(Singleton, Basic)):
     """Base class representing a form type: bilinear/linear/functional"""
@@ -40,6 +42,24 @@ index_point   = IndexPoint()
 index_dof     = IndexDof()
 
 #==============================================================================
+class LengthNode(with_metaclass(Singleton, Basic)):
+    """Base class representing one length of an iterator"""
+    pass
+
+class LengthElement(LengthNode):
+    pass
+
+class LengthPoint(LengthNode):
+    pass
+
+class LengthDof(LengthNode):
+    pass
+
+length_element = LengthElement()
+length_point   = LengthPoint()
+length_dof     = LengthDof()
+
+#==============================================================================
 class BaseNode(Basic):
     """
     """
@@ -51,7 +71,11 @@ class Element(BaseNode):
     """
     pass
 
-
+#==============================================================================
+class Pattern(Tuple):
+    """
+    """
+    pass
 
 #==============================================================================
 class Iterator(BaseNode):
@@ -82,6 +106,9 @@ class Generator(BaseNode):
             dummies = [dummies]
         dummies = Tuple(*dummies)
 
+        if not isinstance(target, ArrayNode):
+            raise TypeError('expecting an ArrayNode')
+
         return Basic.__new__(cls, target, dummies)
 
     @property
@@ -103,10 +130,29 @@ class ArrayNode(BaseNode):
     """
     """
     _rank = None
+    _positions = None
 
     @property
     def rank(self):
         return self._rank
+
+    @property
+    def positions(self):
+        return self._positions
+
+    def pattern(self, args=None):
+        if args is None:
+            positions = self.positions
+        else:
+            positions = {}
+            for a in args:
+                positions[a] = self.positions[a]
+
+        args = [None]*self.rank
+        for k,v in positions.items():
+            args[v] = k
+
+        return Pattern(*args)
 
 #==============================================================================
 class ScalarNode(BaseNode):
@@ -122,9 +168,11 @@ class GlobalQuadrature(ArrayNode):
 
 #==============================================================================
 class LocalQuadrature(ArrayNode):
+    # TODO add set_positions
     """
     """
     _rank = 1
+    _positions = {index_point: 0}
 
 #==============================================================================
 class Quadrature(ScalarNode):
@@ -330,7 +378,7 @@ class EnumerateLoop(BaseNode):
         return self._args[4]
 
 #==============================================================================
-class LoopGlobalQuadrature(BaseNode):
+class LoopGlobalQuadrature(Loop):
     """
     """
     def __new__(cls, stmts):
@@ -343,7 +391,7 @@ class LoopGlobalQuadrature(BaseNode):
         return Loop.__new__(cls, iterator, generator, stmts)
 
 #==============================================================================
-class LoopLocalQuadrature(BaseNode):
+class LoopLocalQuadrature(Loop):
     """
     """
     def __new__(cls, stmts):
@@ -356,7 +404,7 @@ class LoopLocalQuadrature(BaseNode):
         return Loop.__new__(cls, iterator, generator, stmts)
 
 #==============================================================================
-class LoopGlobalBasis(BaseNode):
+class LoopGlobalBasis(Loop):
     """
     """
     def __new__(cls, target, stmts):
@@ -370,7 +418,7 @@ class LoopGlobalBasis(BaseNode):
         return Loop.__new__(cls, iterator, generator, stmts)
 
 #==============================================================================
-class LoopLocalBasis(BaseNode):
+class LoopLocalBasis(Loop):
     """
     """
     def __new__(cls, target, stmts):

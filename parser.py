@@ -19,28 +19,21 @@ from nodes import Basis
 from nodes import LocalQuadrature
 from nodes import LocalBasis
 from nodes import EnumerateLoop
+from nodes import index_point, length_point
+
+##==============================================================================
+#def index_of(expr, dim):
+#    if isinstance(expr, Quadrature):
+#        return symbols('i_quad_1:%d'%(dim+1))
+#
+#    elif isinstance(expr, Basis):
+#        return symbols('i_basis_1:%d'%(dim+1))
+#
+#    else:
+#        raise NotImplementedError('TODO')
 
 #==============================================================================
-def index_of(expr, dim):
-    if isinstance(expr, Quadrature):
-        return symbols('i_quad_1:%d'%(dim+1))
-
-    elif isinstance(expr, Basis):
-        return symbols('i_basis_1:%d'%(dim+1))
-
-    else:
-        raise NotImplementedError('TODO')
-
-#==============================================================================
-def length_of(expr, dim):
-    if isinstance(expr, LocalQuadrature):
-        return symbols('k1:%d'%(dim+1))
-
-    elif isinstance(expr, LocalBasis):
-        return symbols('p1:%d'%(dim+1))
-
-    else:
-        raise NotImplementedError('TODO')
+_length_of_registery = {index_point: length_point}
 
 #==============================================================================
 class Parser(object):
@@ -58,6 +51,10 @@ class Parser(object):
         # ...
 
         self._settings = settings
+
+        # TODO improve
+        self.free_indices = OrderedDict()
+        self.free_lengths = OrderedDict()
 
     @property
     def settings(self):
@@ -87,10 +84,12 @@ class Parser(object):
 
         return Assign(lhs, rhs)
 
+    # ....................................................
     def _visit_Tuple(self, expr):
         args = [self._visit(i) for i in expr]
         return Tuple(*args)
 
+    # ....................................................
     def _visit_Loop(self, expr):
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
@@ -107,6 +106,7 @@ class Parser(object):
 
         return self._visit(stmt)
 
+    # ....................................................
     def _visit_EnumerateLoop(self, expr):
         indices   = expr.indices
         lengths   = expr.lengths
@@ -142,48 +142,23 @@ class Parser(object):
         target = Product(*ranges)
         return For(indices, target, body)
 
+    # ....................................................
     def _visit_Grid(self, expr):
         raise NotImplementedError('TODO')
 
+    # ....................................................
     def _visit_Element(self, expr):
         raise NotImplementedError('TODO')
 
+    # ....................................................
     def _visit_GlobalQuadrature(self, expr):
         raise NotImplementedError('TODO')
 
-    def _visit_LocalQuadrature(self, expr):
-        dim  = self.dim
-        rank = expr.rank
-        length   = length_of(expr, dim)
-
-        names = 'local_x1:%s'%(dim+1)
-        points   = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
-
-        names = 'local_w1:%s'%(dim+1)
-        weights  = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
-
-        this = (points, weights)
-        return {'length': length, 'this': this}
-
-    def _visit_Quadrature(self, expr):
-        # when visiting an iterator, we will return an index and the target
-        # as if we were using enumerate
-        # TODO return a tuple? as if it was an enumerate
-        dim  = self.dim
-        indices = index_of(expr, self.dim)
-
-        names   = 'x1:%s'%(dim+1)
-        points  = variables(names, dtype='real', cls=Variable)
-
-        names   = 'w1:%s'%(dim+1)
-        weights = variables(names, dtype='real', cls=Variable)
-
-        this = (points, weights)
-        return {'indices': indices, 'this': this}
-
+    # ....................................................
     def _visit_GlobalBasis(self, expr):
         raise NotImplementedError('TODO')
 
+    # ....................................................
     def _visit_LocalBasis(self, expr):
         # TODO return a tuple? as if it was an enumerate
         dim = self.dim
@@ -201,6 +176,7 @@ class Parser(object):
 
         return {'length': length, 'this': basis}
 
+    # ....................................................
     def _visit_Basis(self, expr):
         # TODO return a tuple? as if it was an enumerate
         indices = index_of(expr, self.dim)
@@ -209,16 +185,20 @@ class Parser(object):
         this = (Symbol('Bs'),)
         return {'indices': indices, 'this': this}
 
+    # ....................................................
     def _visit_FieldEvaluation(self, expr):
         raise NotImplementedError('TODO')
 
+    # ....................................................
     def _visit_MappingEvaluation(self, expr):
         raise NotImplementedError('TODO')
 
+    # ....................................................
     def _visit_BasisAtom(self, expr):
         symbol = SymbolicExpr(expr.expr)
         return symbol
 
+    # ....................................................
     def _visit_BasisValue(self, expr):
         # ...
         dim = self.dim
@@ -264,17 +244,153 @@ class Parser(object):
         return rhs
     # ....................................................
 
+    # ....................................................
+    def _visit_Pattern(self, expr):
+        # this is for multi-indices for the moment
+        dim = self.dim
+        args = []
+        for a in expr:
+            if a is None:
+                args.append([Slice(None, None)]*dim)
+
+            elif isinstance(a, int):
+                args.append([a]*dim)
+
+            else:
+                v = self._visit(a)
+                args.append(v)
+
+        args = list(zip(*args))
+
+        if len(args) == 1:
+            args = args[0]
+
+        return args
+
+    # ....................................................
+    def _visit_IndexPoint(self, expr):
+        dim = self.dim
+        return symbols('i_quad_1:%d'%(dim+1))
+
+    # ....................................................
+    def _visit_LengthPoint(self, expr):
+        dim = self.dim
+        return symbols('k1:%d'%(dim+1))
+
+    # ....................................................
+    def _visit_Iterator(self, expr):
+        dim  = self.dim
+
+#        print('*** Iterator')
+#        print('> target  = ', expr.target)
+#        print('> dummies = ', expr.dummies)
+
+        # ...
+        if isinstance(expr.target, Quadrature):
+            names   = 'x1:%s'%(dim+1)
+            points  = variables(names, dtype='real', cls=Variable)
+
+            names   = 'w1:%s'%(dim+1)
+            weights = variables(names, dtype='real', cls=Variable)
+
+            target = list(zip(points, weights))
+        # ...
+
+        if expr.dummies is None:
+            return target
+
+        else:
+            raise NotImplementedError('TODO')
+
+    # ....................................................
+    def _visit_Generator(self, expr):
+        dim     = self.dim
+
+        if isinstance(expr.target, LocalQuadrature):
+            rank = expr.target.rank
+
+            names = 'local_x1:%s'%(dim+1)
+            points   = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+
+            names = 'local_w1:%s'%(dim+1)
+            weights  = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+
+            # gather by axis
+            target = list(zip(points, weights))
+
+        if expr.dummies is None:
+            return target
+
+        else:
+            # treat dummies and put them in the namespace
+            dummies = self._visit(expr.dummies)
+            dummies = list(zip(*dummies)) # TODO improve
+            self.free_indices[expr.dummies] = dummies
+
+            # add dummies as args of pattern()
+            pattern = expr.target.pattern()
+            pattern = self._visit(pattern)
+
+            args = []
+            for p, xs in zip(pattern, target):
+                ls = []
+                for x in xs:
+                    ls.append(x[p])
+                args.append(ls)
+
+            return args
+
+    # ....................................................
     def _visit_LoopGlobalQuadrature(self, expr):
         raise NotImplementedError('TODO')
 
+    # ....................................................
     def _visit_LoopLocalQuadrature(self, expr):
-        raise NotImplementedError('TODO')
+        iterator  = self._visit(expr.iterator)
+        generator = self._visit(expr.generator)
+        stmts     = self._visit(expr.stmts)
 
+        dummies = expr.generator.dummies
+        lengths = [_length_of_registery[i] for i in dummies]
+        lengths = [self._visit(i) for i in lengths]
+        lengths = list(zip(*lengths)) # TODO
+        indices = self.free_indices[dummies]
+
+        inits = []
+        for l_xs, g_xs in zip(iterator, generator):
+            ls = []
+            for l_x,g_x in zip(l_xs, g_xs):
+                ls += [Assign(l_x, g_x)]
+            inits.append(ls)
+
+        body = list(stmts)
+        for index, length, init in zip(indices, lengths, inits):
+            if len(length) == 1:
+                l = length[0]
+                i = index[0]
+                ranges = [Range(l)]
+
+            else:
+                ranges = [Range(l) for l in length]
+                i = index
+
+            body = init + body
+            body = [For(i, Product(*ranges), body)]
+
+        return body
+
+    # ....................................................
     def _visit_LoopGlobalBasis(self, expr):
         raise NotImplementedError('TODO')
 
+    # ....................................................
     def _visit_LoopLocalBasis(self, expr):
         raise NotImplementedError('TODO')
+
+    # ....................................................
+    # TODO to be removed. usefull for testing
+    def _visit_Pass(self, expr):
+        return expr
 
 
 #==============================================================================
