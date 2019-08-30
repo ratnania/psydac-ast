@@ -113,8 +113,10 @@ def test_nodes_2d_4():
 def test_nodes_2d_5():
     loop = LoopLocalQuadrature([])
     loop = LoopLocalBasis(u, [loop])
+#    print(loop)
+#    print()
     stmt = parse(loop, settings={'dim': domain.dim})
-    print(stmt)
+#    print(stmt)
     print()
     print(pycode(stmt))
 

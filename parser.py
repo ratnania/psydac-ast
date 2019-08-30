@@ -1,13 +1,13 @@
 from collections import OrderedDict
 
-from sympy import IndexedBase
+from sympy import IndexedBase, Indexed
 from sympy import Mul
 from sympy import symbols, Symbol
 from sympy.core.containers import Tuple
 
 from pyccel.ast import Range, Product, For
 from pyccel.ast import Assign
-from pyccel.ast import Variable, IndexedVariable
+from pyccel.ast import Variable, IndexedVariable, IndexedElement
 from pyccel.ast import Slice
 
 from sympde.topology import SymbolicExpr
@@ -22,6 +22,8 @@ from nodes import LocalBasis
 from nodes import EnumerateLoop
 from nodes import index_point, length_point
 from nodes import index_dof, length_dof
+from nodes import index_deriv
+from nodes import SplitArray
 
 #==============================================================================
 _length_of_registery = {index_point: length_point, index_dof: length_dof}
@@ -148,15 +150,12 @@ class Parser(object):
         # TODO label, derivatives
         dim = self.dim
         nderiv = 1
-        if nderiv > 0:
-            names = 'N_1:%s(1:%s)'%(dim+1,nderiv+1)
-        else:
-            names = 'N_1:%s'%(dim+1)
 
-        target = variables(names, dtype='real')
-        if not isinstance(target[0], (tuple, list, Tuple)):
-            target = [target]
-        target = list(zip(*target))
+        target = []
+        for i in range(1, dim+1):
+            names = ['N{i}_d{d}'.format(i=i, d=d) for d in range(0, nderiv+1)]
+            args = variables(names, dtype='real')
+            target.append(args)
         return target
 
     # ....................................................
@@ -252,6 +251,10 @@ class Parser(object):
         return symbols('i_basis_1:%d'%(dim+1))
 
     # ....................................................
+    def _visit_IndexDerivative(self, expr):
+        raise NotImplementedError('TODO')
+
+    # ....................................................
     def _visit_LengthPoint(self, expr):
         dim = self.dim
         return symbols('k1:%d'%(dim+1))
@@ -265,14 +268,7 @@ class Parser(object):
     # ....................................................
     def _visit_Iterator(self, expr):
         dim  = self.dim
-
-#        print('*** Iterator')
-#        print('> target  = ', expr.target)
-#        print('> dummies = ', expr.dummies)
-
-        # ...
         target = self._visit(expr.target)
-        # ...
 
         if expr.dummies is None:
             return target
@@ -288,27 +284,29 @@ class Parser(object):
         if expr.dummies is None:
             return target
 
-        else:
-            # treat dummies and put them in the namespace
-            dummies = self._visit(expr.dummies)
-            dummies = list(zip(*dummies)) # TODO improve
-            self.free_indices[expr.dummies] = dummies
+        # treat dummies and put them in the namespace
+        dummies = self._visit(expr.dummies)
+        dummies = list(zip(*dummies)) # TODO improve
+        self.free_indices[expr.dummies] = dummies
 
-            # add dummies as args of pattern()
-            pattern = expr.target.pattern()
-            pattern = self._visit(pattern)
+        # add dummies as args of pattern()
+        pattern = expr.target.pattern()
+        pattern = self._visit(pattern)
 
-            args = []
-            for p, xs in zip(pattern, target):
-                ls = []
-                for x in xs:
-                    ls.append(x[p])
-                args.append(ls)
+        args = []
+        for p, xs in zip(pattern, target):
+            ls = []
+            for x in xs:
+                ls.append(x[p])
+            args.append(ls)
 
-            return args
+        return args
 
     # ....................................................
     def _visit_Loop(self, expr):
+#        print('**** Enter Loop ')
+        # TODO nderiv as kwarg
+        nderiv = 2 # here it's nderiv+1
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
         stmts     = self._visit(expr.stmts)
@@ -319,13 +317,34 @@ class Parser(object):
         lengths = list(zip(*lengths)) # TODO
         indices = self.free_indices[dummies]
 
+        # ...
         inits = []
         for l_xs, g_xs in zip(iterator, generator):
             ls = []
+            # there is a special case here,
+            # when local var is a list while the global var is
+            # an array of rank 1. In this case we want to enumerate all the
+            # components of the global var.
+            # this is the case when dealing with derivatives in each direction
+            # TODO maybe we should add a flag here or a kwarg that says we
+            # should enumerate the array
+            if len(l_xs) > len(g_xs):
+                assert(isinstance(expr.generator.target, LocalBasis))
+
+                positions = [expr.generator.target.positions[i] for i in [index_deriv]]
+                args = []
+                for xs in g_xs:
+                    # TODO improve
+                    a = SplitArray(xs, positions, [nderiv])
+                    args += self._visit(a)
+                g_xs = args
+
             for l_x,g_x in zip(l_xs, g_xs):
                 ls += [Assign(l_x, g_x)]
             inits.append(ls)
+        # ...
 
+        # ...
         body = list(stmts)
         for index, length, init in zip(indices, lengths, inits):
             if len(length) == 1:
@@ -339,8 +358,32 @@ class Parser(object):
 
             body = init + body
             body = [For(i, Product(*ranges), body)]
+        # ...
 
+#        print('**** End   Loop ')
         return body
+
+    # ....................................................
+    def _visit_SplitArray(self, expr):
+        target  = expr.target
+        positions = expr.positions
+        lengths = expr.lengths
+        base = target.base
+
+        args = []
+        for p,n in zip(positions, lengths):
+            indices = target.indices[0] # sympy is return a tuple of tuples
+            indices = [i for i in indices] # make a copy
+            for i in range(n):
+                indices[p] = i
+                x = base[indices]
+                args.append(x)
+
+        return args
+
+    # ....................................................
+    def _visit_IndexedElement(self, expr):
+        return expr
 
     # ....................................................
     # TODO to be removed. usefull for testing

@@ -35,9 +35,13 @@ class IndexPoint(IndexNode):
 class IndexDof(IndexNode):
     pass
 
+class IndexDerivative(IndexNode):
+    pass
+
 index_element = IndexElement()
 index_point   = IndexPoint()
 index_dof     = IndexDof()
+index_deriv   = IndexDerivative()
 
 #==============================================================================
 class LengthNode(with_metaclass(Singleton, Basic)):
@@ -129,6 +133,7 @@ class ArrayNode(BaseNode):
     """
     _rank = None
     _positions = None
+    _free_positions = None
 
     @property
     def rank(self):
@@ -138,13 +143,21 @@ class ArrayNode(BaseNode):
     def positions(self):
         return self._positions
 
+    @property
+    def free_positions(self):
+        if self._free_positions is None:
+            return list(self.positions.keys())
+
+        else:
+            return self._free_positions
+
     def pattern(self, args=None):
         if args is None:
-            positions = self.positions
-        else:
-            positions = {}
-            for a in args:
-                positions[a] = self.positions[a]
+            args = self.free_positions
+
+        positions = {}
+        for a in args:
+            positions[a] = self.positions[a]
 
         args = [None]*self.rank
         for k,v in positions.items():
@@ -200,7 +213,8 @@ class LocalBasis(ArrayNode):
     """
     _rank = 3
     # TODO add index derivative
-    _positions = {index_point: 2, index_dof: 0}
+    _positions = {index_point: 2, index_deriv: 1, index_dof: 0}
+    _free_positions = [index_point, index_dof]
 
     def __new__(cls, target):
         if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
@@ -429,3 +443,30 @@ class LoopLocalBasis(Loop):
         generator = Generator(l_quad, index_dof)
 
         return Loop.__new__(cls, iterator, generator, stmts)
+
+#==============================================================================
+class SplitArray(BaseNode):
+    """
+    """
+    def __new__(cls, target, positions, lengths):
+        if not isinstance(positions, (list, tuple, Tuple)):
+            positions = [positions]
+        positions = Tuple(*positions)
+
+        if not isinstance(lengths, (list, tuple, Tuple)):
+            lengths = [lengths]
+        lengths = Tuple(*lengths)
+
+        return Basic.__new__(cls, target, positions, lengths)
+
+    @property
+    def target(self):
+        return self._args[0]
+
+    @property
+    def positions(self):
+        return self._args[1]
+
+    @property
+    def lengths(self):
+        return self._args[2]
