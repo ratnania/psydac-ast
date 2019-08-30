@@ -29,6 +29,7 @@ from nodes import index_point, length_point
 from nodes import index_dof, length_dof
 from nodes import index_deriv
 from nodes import SplitArray
+from nodes import Accumulate
 
 
 #==============================================================================
@@ -238,8 +239,19 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_Compute(self, expr):
+    def _visit_Accumulate(self, expr):
         op   = expr.op
+        expr = expr.expr
+
+        # TODO improve lhs
+        lhs = random_string( 6 )
+        lhs = Symbol('tmp_{}'.format(lhs))
+
+        rhs = self._visit(BasisValue(expr))
+        return AugAssign(lhs, op, rhs)
+
+    # ....................................................
+    def _visit_Compute(self, expr):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
             lhs = self._visit(BasisAtom(expr))
@@ -248,10 +260,7 @@ class Parser(object):
             lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(BasisValue(expr))
-        if op is None:
-            return Assign(lhs, rhs)
-        else:
-            return AugAssign(lhs, op, rhs)
+        return Assign(lhs, rhs)
 
     # ....................................................
     def _visit_FieldEvaluation(self, expr):
@@ -369,6 +378,11 @@ class Parser(object):
 #        print('**** Enter Loop ')
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
+
+        # check if there is an accumulation
+        # TODO init accumulation vars
+#        accumulations = expr.stmts.atoms(Accumulate)
+
         stmts     = self._visit(expr.stmts)
 
         dummies = expr.generator.dummies

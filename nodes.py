@@ -262,16 +262,27 @@ class MappingEvaluation(Evaluation):
 class Compute(Basic):
     """
     """
-    def __new__(cls, expr, op=None):
-        # TODO add verification on op = '-', '+', '*', '/', None
-        return Basic.__new__(cls, expr, op)
+    def __new__(cls, expr):
+        return Basic.__new__(cls, expr)
 
     @property
     def expr(self):
         return self._args[0]
 
+#==============================================================================
+class Accumulate(Basic):
+    """
+    """
+    def __new__(cls, op, expr):
+        # TODO add verification on op = '-', '+', '*', '/'
+        return Basic.__new__(cls, op, expr)
+
     @property
     def op(self):
+        return self._args[0]
+
+    @property
+    def expr(self):
         return self._args[1]
 
 #==============================================================================

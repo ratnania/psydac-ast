@@ -33,6 +33,7 @@ from nodes import LoopGlobalQuadrature
 from nodes import LoopLocalBasis
 from nodes import LoopGlobalBasis
 from nodes import Compute
+from nodes import Accumulate
 
 from parser import parse
 
@@ -128,7 +129,7 @@ def test_nodes_2d_5():
 def test_nodes_2d_6():
     body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
     body  = [Compute(i) for i in body]
-    body += [Compute(dy(u)*dx(u), op='+')]
+    body += [Accumulate('+', dy(u)*dx(u))]
     loop = LoopLocalQuadrature(body)
     loop = LoopLocalBasis(u, [loop])
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
