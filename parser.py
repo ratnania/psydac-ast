@@ -90,59 +90,6 @@ class Parser(object):
         return Tuple(*args)
 
     # ....................................................
-    def _visit_Loop(self, expr):
-        iterator  = self._visit(expr.iterator)
-        generator = self._visit(expr.generator)
-        stmts     = self._visit(expr.stmts)
-
-#        print('*** Loop')
-#        print('> iterator  = ', iterator)
-#        print('> generator = ', generator)
-#        print('> stmts     = ', stmts    )
-
-        # create an enumerate loop
-        stmt = EnumerateLoop(iterator['indices'], generator['length'],
-                             iterator['this'], generator['this'], stmts)
-
-        return self._visit(stmt)
-
-    # ....................................................
-    def _visit_EnumerateLoop(self, expr):
-        indices   = expr.indices
-        lengths   = expr.lengths
-        iterator  = expr.iterator
-        generator = expr.iterable
-        stmts     = expr.stmts
-
-#        print('*** EnumerateLoop')
-#        print('> indices   = ', indices)
-#        print('> lengths   = ', lengths)
-#        print('> iterator  = ', iterator)
-#        print('> generator = ', generator)
-#        print('> stmts     = ', stmts)
-
-
-        body = []
-        for this, target in zip(iterator, generator):
-            # TODO remove
-            if not isinstance(this, (tuple, list, Tuple)):
-                this = [this]
-
-            # TODO remove
-            if not isinstance(target, (tuple, list, Tuple)):
-                target = [target]
-
-            for i, lhs, rhs in zip(indices, this, target):
-                body += [Assign(lhs, rhs[i])]
-
-        for stmt in stmts:
-            body += [stmt]
-
-        ranges = [Range(l) for l in lengths]
-        target = Product(*ranges)
-        return For(indices, target, body)
-
-    # ....................................................
     def _visit_Grid(self, expr):
         raise NotImplementedError('TODO')
 
@@ -153,6 +100,35 @@ class Parser(object):
     # ....................................................
     def _visit_GlobalQuadrature(self, expr):
         raise NotImplementedError('TODO')
+
+    # ....................................................
+    def _visit_LocalQuadrature(self, expr):
+        dim  = self.dim
+        rank = expr.rank
+
+        names = 'local_x1:%s'%(dim+1)
+        points   = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+
+        names = 'local_w1:%s'%(dim+1)
+        weights  = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+
+        # gather by axis
+        target = list(zip(points, weights))
+
+        return target
+
+    # ....................................................
+    def _visit_Quadrature(self, expr):
+        dim = self.dim
+
+        names   = 'x1:%s'%(dim+1)
+        points  = variables(names, dtype='real', cls=Variable)
+
+        names   = 'w1:%s'%(dim+1)
+        weights = variables(names, dtype='real', cls=Variable)
+
+        target = list(zip(points, weights))
+        return target
 
     # ....................................................
     def _visit_GlobalBasis(self, expr):
@@ -286,14 +262,7 @@ class Parser(object):
 #        print('> dummies = ', expr.dummies)
 
         # ...
-        if isinstance(expr.target, Quadrature):
-            names   = 'x1:%s'%(dim+1)
-            points  = variables(names, dtype='real', cls=Variable)
-
-            names   = 'w1:%s'%(dim+1)
-            weights = variables(names, dtype='real', cls=Variable)
-
-            target = list(zip(points, weights))
+        target = self._visit(expr.target)
         # ...
 
         if expr.dummies is None:
@@ -304,19 +273,8 @@ class Parser(object):
 
     # ....................................................
     def _visit_Generator(self, expr):
-        dim     = self.dim
-
-        if isinstance(expr.target, LocalQuadrature):
-            rank = expr.target.rank
-
-            names = 'local_x1:%s'%(dim+1)
-            points   = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
-
-            names = 'local_w1:%s'%(dim+1)
-            weights  = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
-
-            # gather by axis
-            target = list(zip(points, weights))
+        dim    = self.dim
+        target = self._visit(expr.target)
 
         if expr.dummies is None:
             return target
@@ -345,7 +303,7 @@ class Parser(object):
         raise NotImplementedError('TODO')
 
     # ....................................................
-    def _visit_LoopLocalQuadrature(self, expr):
+    def _visit_Loop(self, expr):
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
         stmts     = self._visit(expr.stmts)
