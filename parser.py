@@ -10,9 +10,11 @@ from pyccel.ast import Assign
 from pyccel.ast import Variable, IndexedVariable, IndexedElement
 from pyccel.ast import Slice
 
+from sympde.topology import (dx, dy, dz)
 from sympde.topology import SymbolicExpr
 from sympde.topology.derivatives import get_index_derivatives
 from sympde.topology import element_of
+from sympde.expr.evaluation import _split_test_function
 
 from nodes import BasisAtom
 from nodes import Quadrature
@@ -43,6 +45,16 @@ class Parser(object):
         self._dim = dim
         # ...
 
+        # ...
+        nderiv = None
+        if not( settings is None ):
+            nderiv = settings.pop('nderiv', None)
+            if nderiv is None:
+                raise ValueError('nderiv not provided')
+
+        self._nderiv = nderiv
+        # ...
+
         self._settings = settings
 
         # TODO improve
@@ -56,6 +68,10 @@ class Parser(object):
     @property
     def dim(self):
         return self._dim
+
+    @property
+    def nderiv(self):
+        return self._nderiv
 
     def doit(self, expr, **settings):
         return self._visit(expr, **settings)
@@ -147,16 +163,24 @@ class Parser(object):
 
     # ....................................................
     def _visit_Basis(self, expr):
-        # TODO label, derivatives
+        # TODO label
         dim = self.dim
-        nderiv = 1
+        nderiv = self.nderiv
+        target = expr.target
+        ops = [dx, dy, dz][:dim]
+        args = []
+        atoms =  _split_test_function(target)
+        for i,atom in enumerate(atoms):
+            d = ops[i]
+            ls = [atom]
+            a = atom
+            for n in range(1, nderiv+1):
+                a = d(a)
+                ls.append(a)
 
-        target = []
-        for i in range(1, dim+1):
-            names = ['N{i}_d{d}'.format(i=i, d=d) for d in range(0, nderiv+1)]
-            args = variables(names, dtype='real')
-            target.append(args)
-        return target
+            args.append(ls)
+
+        return args
 
     # ....................................................
     def _visit_FieldEvaluation(self, expr):
@@ -305,8 +329,6 @@ class Parser(object):
     # ....................................................
     def _visit_Loop(self, expr):
 #        print('**** Enter Loop ')
-        # TODO nderiv as kwarg
-        nderiv = 2 # here it's nderiv+1
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
         stmts     = self._visit(expr.stmts)
@@ -335,12 +357,17 @@ class Parser(object):
                 args = []
                 for xs in g_xs:
                     # TODO improve
-                    a = SplitArray(xs, positions, [nderiv])
+                    a = SplitArray(xs, positions, [self.nderiv+1])
                     args += self._visit(a)
                 g_xs = args
 
             for l_x,g_x in zip(l_xs, g_xs):
-                ls += [Assign(l_x, g_x)]
+                if isinstance(expr.generator.target, LocalBasis):
+                    lhs = self._visit(BasisAtom(l_x))
+                else:
+                    lhs = l_x
+
+                ls += [Assign(lhs, g_x)]
             inits.append(ls)
         # ...
 

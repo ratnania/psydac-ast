@@ -115,7 +115,7 @@ def test_nodes_2d_5():
     loop = LoopLocalBasis(u, [loop])
 #    print(loop)
 #    print()
-    stmt = parse(loop, settings={'dim': domain.dim})
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
 #    print(stmt)
     print()
     print(pycode(stmt))
