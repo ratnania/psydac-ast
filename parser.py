@@ -2,11 +2,13 @@ from collections import OrderedDict
 
 from sympy import IndexedBase, Indexed
 from sympy import Mul
+from sympy import Add
 from sympy import symbols, Symbol
 from sympy.core.containers import Tuple
 
 from pyccel.ast import Range, Product, For
 from pyccel.ast import Assign
+from pyccel.ast import AugAssign
 from pyccel.ast import Variable, IndexedVariable, IndexedElement
 from pyccel.ast import Slice
 
@@ -14,9 +16,10 @@ from sympde.topology import (dx, dy, dz)
 from sympde.topology import SymbolicExpr
 from sympde.topology.derivatives import get_index_derivatives
 from sympde.topology import element_of
-from sympde.expr.evaluation import _split_test_function
+#from sympde.expr.evaluation import _split_test_function # TODO use it
 
 from nodes import BasisAtom
+from nodes import BasisValue
 from nodes import Quadrature
 from nodes import Basis
 from nodes import LocalQuadrature
@@ -26,6 +29,58 @@ from nodes import index_point, length_point
 from nodes import index_dof, length_dof
 from nodes import index_deriv
 from nodes import SplitArray
+
+
+#==============================================================================
+# TODO move it
+import string
+import random
+def random_string( n ):
+    chars    = string.ascii_lowercase + string.digits
+    selector = random.SystemRandom()
+    return ''.join( selector.choice( chars ) for _ in range( n ) )
+
+#==============================================================================
+# TODO must be moved to sympde
+# TODO re-test gelato
+from sympde.topology import ScalarTestFunction
+from sympde.topology import ScalarFunctionSpace
+from sympde.topology import Interval
+def _split_test_function(expr):
+
+    if isinstance(expr, ScalarTestFunction):
+
+        dim = expr.space.ldim
+        coords = ['x', 'y', 'z'][:dim]
+        coords = [Symbol(i) for i in coords]
+        name = expr.name
+
+        ls = []
+        for i in range(0, dim):
+            Di = Interval(coordinate=coords[i])
+            Vi = ScalarFunctionSpace('tmp_V_{}'.format(i), domain=Di)
+
+            ai = ScalarTestFunction(Vi, '{name}{i}'.format(name=name, i=i+1))
+            ls += [ai]
+
+        return ls
+
+    # TODO
+#    elif isinstance(expr, IndexedTestTrial):
+#
+#        i = expr.indices
+#        assert(len(i) == 1)
+#        i = i[0]
+#
+#        V = expr.base.space
+#        Vi = ScalarFunctionSpace('tmpV_{}'.format(i), V.domain)
+#        vi = ScalarTestFunction(Vi, '{test}{i}'.format(test=expr.base.name, i=i))
+#
+#        return _split_test_function(vi)
+
+    else:
+        msg = 'Expecting ScalarTestFunction or IndexedTestTrial, given {}'.format(type(expr))
+        raise TypeError(msg)
 
 #==============================================================================
 _length_of_registery = {index_point: length_point, index_dof: length_dof}
@@ -183,6 +238,22 @@ class Parser(object):
         return args
 
     # ....................................................
+    def _visit_Compute(self, expr):
+        op   = expr.op
+        expr = expr.expr
+        if not isinstance(expr, (Add, Mul)):
+            lhs = self._visit(BasisAtom(expr))
+        else:
+            lhs = random_string( 6 )
+            lhs = Symbol('tmp_{}'.format(lhs))
+
+        rhs = self._visit(BasisValue(expr))
+        if op is None:
+            return Assign(lhs, rhs)
+        else:
+            return AugAssign(lhs, op, rhs)
+
+    # ....................................................
     def _visit_FieldEvaluation(self, expr):
         raise NotImplementedError('TODO')
 
@@ -198,47 +269,14 @@ class Parser(object):
     # ....................................................
     def _visit_BasisValue(self, expr):
         # ...
-        dim = self.dim
-        settings = self.settings.copy()
-        tests    = settings.pop('tests', [])
-        trials   = settings.pop('trials', [])
-        indices  = settings.pop('indices', None)
-
-        if ( indices is None ) or not isinstance(indices, (dict, OrderedDict)):
-            raise ValueError('indices must be a dictionary')
-
-        if not( 'quad' in indices.keys() ):
-            raise ValueError('quad not provided for indices')
-
-        if not( 'basis' in indices.keys() ):
-            raise ValueError('basis not provided for indices')
-        # ...
-
-        # ...
         expr   = expr.expr
         atom   = BasisAtom(expr).atom
-        orders = [*get_index_derivatives(expr).values()]
+        atoms  = _split_test_function(atom)
         # ...
 
-        # ...
-        if atom in tests:
-            name = 'Ni'
-        elif atom in trials:
-            name = 'Nj'
-        else:
-            raise NotImplementedError('TODO')
-        # ...
-
-        # ...
-        basis = [IndexedBase('{name}{index}'.format(name=name, index=i))
-                 for i in range(dim)]
-        # ...
-
-        args = [b[i, d, q]
-                for b, i, d, q in zip(basis, indices['basis'], orders, indices['quad'])]
-        rhs = Mul(*args)
-
-        return rhs
+        new = Mul(*atoms)
+        expr = expr.subs({atom: new})
+        return SymbolicExpr(expr)
     # ....................................................
 
     # ....................................................

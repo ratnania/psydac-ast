@@ -32,6 +32,7 @@ from nodes import LoopLocalQuadrature
 from nodes import LoopGlobalQuadrature
 from nodes import LoopLocalBasis
 from nodes import LoopGlobalBasis
+from nodes import Compute
 
 from parser import parse
 
@@ -82,7 +83,7 @@ def test_nodes_2d_2():
     print()
 
 #==============================================================================
-def test_nodes_2d_3():
+def test_nodes_2d_3a():
     expr = dx(u)
     lhs  = BasisAtom(expr)
     rhs  = BasisValue(expr)
@@ -90,22 +91,27 @@ def test_nodes_2d_3():
     assert(lhs.atom == u)
     assert(parse(lhs) == Symbol('u_x'))
 
-#    stmt = Assign(lhs, rhs)
-#    indices = {'basis': index_of(basis, domain.dim),
-#               'quad':  index_of(quad, domain.dim)}
-#    settings = {'dim':     domain.dim,
-#                'tests':   [v],
-#                'trials':  [u],
-#                'indices': indices}
-#    stmt = parse(stmt, settings)
-#    print(stmt)
+    u1_x = Symbol('u1_x')
+    u2   = Symbol('u2')
+    assert(parse(rhs) == u1_x*u2)
+
+    print()
+
+#==============================================================================
+def test_nodes_2d_3b():
+    expr = dy(dx(u))
+    lhs  = BasisAtom(expr)
+    rhs  = BasisValue(expr)
+
+    print(parse(lhs) )
+    print(parse(rhs) )
 
     print()
 
 #==============================================================================
 def test_nodes_2d_4():
     loop = LoopLocalQuadrature([])
-    stmt = parse(loop, settings={'dim': domain.dim})
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
     print(pycode(stmt))
     print()
 
@@ -113,15 +119,21 @@ def test_nodes_2d_4():
 def test_nodes_2d_5():
     loop = LoopLocalQuadrature([])
     loop = LoopLocalBasis(u, [loop])
-#    print(loop)
-#    print()
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
-#    print(stmt)
     print()
     print(pycode(stmt))
+    print()
 
-#    stmt = parse(stmt, dim=domain.dim, tests=[v], trials=[u], indices=indices)
-#    print(stmt)
+#==============================================================================
+def test_nodes_2d_6():
+    body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+    body  = [Compute(i) for i in body]
+    body += [Compute(dy(u)*dx(u), op='+')]
+    loop = LoopLocalQuadrature(body)
+    loop = LoopLocalBasis(u, [loop])
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
+    print()
+    print(pycode(stmt))
     print()
 
 
@@ -137,8 +149,10 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-#test_nodes_2d_1()
-#test_nodes_2d_2()
-#test_nodes_2d_3()
-#test_nodes_2d_4()
+test_nodes_2d_1()
+test_nodes_2d_2()
+test_nodes_2d_3a()
+test_nodes_2d_3b()
+test_nodes_2d_4()
 test_nodes_2d_5()
+test_nodes_2d_6()

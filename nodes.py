@@ -259,6 +259,22 @@ class MappingEvaluation(Evaluation):
     pass
 
 #==============================================================================
+class Compute(Basic):
+    """
+    """
+    def __new__(cls, expr, op=None):
+        # TODO add verification on op = '-', '+', '*', '/', None
+        return Basic.__new__(cls, expr, op)
+
+    @property
+    def expr(self):
+        return self._args[0]
+
+    @property
+    def op(self):
+        return self._args[1]
+
+#==============================================================================
 class ExprNode(Basic):
     """
     """
