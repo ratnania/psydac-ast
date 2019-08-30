@@ -112,7 +112,7 @@ def test_nodes_2d_4():
 #==============================================================================
 def test_nodes_2d_5():
     loop = LoopLocalQuadrature([])
-    print(loop)
+    loop = LoopLocalBasis(u, [loop])
     stmt = parse(loop, settings={'dim': domain.dim})
     print(stmt)
     print()
@@ -138,5 +138,5 @@ def teardown_function():
 #test_nodes_2d_1()
 #test_nodes_2d_2()
 #test_nodes_2d_3()
-test_nodes_2d_4()
-#test_nodes_2d_5()
+#test_nodes_2d_4()
+test_nodes_2d_5()

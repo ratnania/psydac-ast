@@ -8,6 +8,7 @@ from sympy.core.containers import Tuple
 from pyccel.ast import Range, Product, For
 from pyccel.ast import Assign
 from pyccel.ast import Variable, IndexedVariable
+from pyccel.ast import Slice
 
 from sympde.topology import SymbolicExpr
 from sympde.topology.derivatives import get_index_derivatives
@@ -20,20 +21,10 @@ from nodes import LocalQuadrature
 from nodes import LocalBasis
 from nodes import EnumerateLoop
 from nodes import index_point, length_point
-
-##==============================================================================
-#def index_of(expr, dim):
-#    if isinstance(expr, Quadrature):
-#        return symbols('i_quad_1:%d'%(dim+1))
-#
-#    elif isinstance(expr, Basis):
-#        return symbols('i_basis_1:%d'%(dim+1))
-#
-#    else:
-#        raise NotImplementedError('TODO')
+from nodes import index_dof, length_dof
 
 #==============================================================================
-_length_of_registery = {index_point: length_point}
+_length_of_registery = {index_point: length_point, index_dof: length_dof}
 
 #==============================================================================
 class Parser(object):
@@ -136,30 +127,37 @@ class Parser(object):
 
     # ....................................................
     def _visit_LocalBasis(self, expr):
-        # TODO return a tuple? as if it was an enumerate
+        # TODO add label
+        # TODO add ln
         dim = self.dim
         rank = expr.rank
-        length = length_of(expr, dim)
-        # TODO
         ln = 1
-
         if ln > 1:
-            names = 'trial_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            names = 'basis_1:%s(1:%s)'%(dim+1,ln+1)
         else:
-            names = 'trial_basis_1:%s'%(dim+1)
+            names = 'basis_1:%s'%(dim+1)
 
-        basis = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
-
-        return {'length': length, 'this': basis}
+        target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+        if not isinstance(target[0], (tuple, list, Tuple)):
+            target = [target]
+        target = list(zip(*target))
+        return target
 
     # ....................................................
     def _visit_Basis(self, expr):
-        # TODO return a tuple? as if it was an enumerate
-        indices = index_of(expr, self.dim)
+        # TODO label, derivatives
+        dim = self.dim
+        nderiv = 1
+        if nderiv > 0:
+            names = 'N_1:%s(1:%s)'%(dim+1,nderiv+1)
+        else:
+            names = 'N_1:%s'%(dim+1)
 
-        # TODO
-        this = (Symbol('Bs'),)
-        return {'indices': indices, 'this': this}
+        target = variables(names, dtype='real')
+        if not isinstance(target[0], (tuple, list, Tuple)):
+            target = [target]
+        target = list(zip(*target))
+        return target
 
     # ....................................................
     def _visit_FieldEvaluation(self, expr):
@@ -249,9 +247,20 @@ class Parser(object):
         return symbols('i_quad_1:%d'%(dim+1))
 
     # ....................................................
+    def _visit_IndexDof(self, expr):
+        dim = self.dim
+        return symbols('i_basis_1:%d'%(dim+1))
+
+    # ....................................................
     def _visit_LengthPoint(self, expr):
         dim = self.dim
         return symbols('k1:%d'%(dim+1))
+
+    # ....................................................
+    def _visit_LengthDof(self, expr):
+        # TODO must be p+1
+        dim = self.dim
+        return symbols('p1:%d'%(dim+1))
 
     # ....................................................
     def _visit_Iterator(self, expr):
@@ -299,10 +308,6 @@ class Parser(object):
             return args
 
     # ....................................................
-    def _visit_LoopGlobalQuadrature(self, expr):
-        raise NotImplementedError('TODO')
-
-    # ....................................................
     def _visit_Loop(self, expr):
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
@@ -336,14 +341,6 @@ class Parser(object):
             body = [For(i, Product(*ranges), body)]
 
         return body
-
-    # ....................................................
-    def _visit_LoopGlobalBasis(self, expr):
-        raise NotImplementedError('TODO')
-
-    # ....................................................
-    def _visit_LoopLocalBasis(self, expr):
-        raise NotImplementedError('TODO')
 
     # ....................................................
     # TODO to be removed. usefull for testing

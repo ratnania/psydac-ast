@@ -7,8 +7,6 @@ from sympy.core.containers import Tuple
 
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 
-from pyccel.ast import Slice
-
 #==============================================================================
 class ArityType(with_metaclass(Singleton, Basic)):
     """Base class representing a form type: bilinear/linear/functional"""
@@ -201,6 +199,8 @@ class LocalBasis(ArrayNode):
     """
     """
     _rank = 3
+    # TODO add index derivative
+    _positions = {index_point: 2, index_dof: 0}
 
     def __new__(cls, target):
         if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
