@@ -22,11 +22,13 @@ from nodes import BasisAtom
 from nodes import BasisValue
 from nodes import Quadrature
 from nodes import Basis
+from nodes import GlobalQuadrature
 from nodes import LocalQuadrature
 from nodes import LocalBasis
 from nodes import EnumerateLoop
 from nodes import index_point, length_point
 from nodes import index_dof, length_dof
+from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
 from nodes import Accumulate
@@ -84,7 +86,9 @@ def _split_test_function(expr):
         raise TypeError(msg)
 
 #==============================================================================
-_length_of_registery = {index_point: length_point, index_dof: length_dof}
+_length_of_registery = {index_point:   length_point,
+                        index_dof:     length_dof,
+                        index_element: length_element, }
 
 #==============================================================================
 class Parser(object):
@@ -164,7 +168,19 @@ class Parser(object):
 
     # ....................................................
     def _visit_GlobalQuadrature(self, expr):
-        raise NotImplementedError('TODO')
+        dim  = self.dim
+        rank = expr.rank
+
+        names = 'global_x1:%s'%(dim+1)
+        points   = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+
+        names = 'global_w1:%s'%(dim+1)
+        weights  = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+
+        # gather by axis
+        target = list(zip(points, weights))
+
+        return target
 
     # ....................................................
     def _visit_LocalQuadrature(self, expr):
@@ -312,6 +328,11 @@ class Parser(object):
         return args
 
     # ....................................................
+    def _visit_IndexElement(self, expr):
+        dim = self.dim
+        return symbols('i_element_1:%d'%(dim+1))
+
+    # ....................................................
     def _visit_IndexPoint(self, expr):
         dim = self.dim
         return symbols('i_quad_1:%d'%(dim+1))
@@ -324,6 +345,11 @@ class Parser(object):
     # ....................................................
     def _visit_IndexDerivative(self, expr):
         raise NotImplementedError('TODO')
+
+    # ....................................................
+    def _visit_LengthElement(self, expr):
+        dim = self.dim
+        return symbols('n_element_1:%d'%(dim+1))
 
     # ....................................................
     def _visit_LengthPoint(self, expr):
@@ -354,6 +380,15 @@ class Parser(object):
 
         if expr.dummies is None:
             return target
+
+#        if isinstance(expr.target, GlobalQuadrature):
+#            print('> target = ', target)
+#            print('> dummies = ', expr.dummies)
+#            for i in expr.dummies:
+#                print(i, type(i))
+#                a = self._visit(i)
+#                print(i, '     ' , a)
+#            import sys; sys.exit(0)
 
         # treat dummies and put them in the namespace
         dummies = self._visit(expr.dummies)

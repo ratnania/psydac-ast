@@ -112,6 +112,7 @@ def test_nodes_2d_3b():
 #==============================================================================
 def test_nodes_2d_4():
     loop = LoopLocalQuadrature([])
+    # TODO do we need nderiv here?
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
     print(pycode(stmt))
     print()
@@ -137,6 +138,14 @@ def test_nodes_2d_6():
     print(pycode(stmt))
     print()
 
+#==============================================================================
+def test_nodes_2d_7():
+    loop = LoopLocalQuadrature([])
+    loop = LoopGlobalQuadrature([loop])
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
 
 #==============================================================================
 # CLEAN UP SYMPY NAMESPACE
@@ -150,10 +159,11 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-test_nodes_2d_1()
-test_nodes_2d_2()
-test_nodes_2d_3a()
-test_nodes_2d_3b()
-test_nodes_2d_4()
-test_nodes_2d_5()
-test_nodes_2d_6()
+#test_nodes_2d_1()
+#test_nodes_2d_2()
+#test_nodes_2d_3a()
+#test_nodes_2d_3b()
+#test_nodes_2d_4()
+#test_nodes_2d_5()
+#test_nodes_2d_6()
+test_nodes_2d_7()

@@ -176,6 +176,8 @@ class GlobalQuadrature(ArrayNode):
     """
     """
     _rank = 2
+    _positions = {index_element: 0, index_point: 1}
+    _free_positions = [index_element]
 
 #==============================================================================
 class LocalQuadrature(ArrayNode):
