@@ -25,7 +25,6 @@ from nodes import Basis
 from nodes import GlobalQuadrature
 from nodes import LocalQuadrature
 from nodes import LocalBasis
-from nodes import EnumerateLoop
 from nodes import index_point, length_point
 from nodes import index_dof, length_dof
 from nodes import index_element, length_element

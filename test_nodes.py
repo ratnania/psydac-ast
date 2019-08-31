@@ -28,10 +28,10 @@ from nodes import BasisValue
 from nodes import index_element
 from nodes import index_point
 from nodes import index_dof
-from nodes import LoopLocalQuadrature
-from nodes import LoopGlobalQuadrature
-from nodes import LoopLocalBasis
-from nodes import LoopGlobalBasis
+from nodes import loop_local_quadrature
+from nodes import loop_global_quadrature
+from nodes import loop_local_basis
+from nodes import loop_global_basis
 from nodes import Compute
 from nodes import Accumulate
 
@@ -58,12 +58,12 @@ basis   = Basis(u)
 #==============================================================================
 def test_nodes_2d_1():
     # ...
-    loop = LoopLocalQuadrature([])
+    loop = loop_local_quadrature([])
     print(loop)
     # ...
 
     # ...
-    loop = LoopGlobalQuadrature(loop)
+    loop = loop_global_quadrature(loop)
     print(loop)
     # ...
 
@@ -72,12 +72,12 @@ def test_nodes_2d_1():
 #==============================================================================
 def test_nodes_2d_2():
     # ...
-    loop = LoopLocalBasis(u, [])
+    loop = loop_local_basis(u, [])
     print(loop)
     # ...
 
     # ...
-    loop = LoopGlobalBasis(u, loop)
+    loop = loop_global_basis(u, loop)
     print(loop)
     # ...
 
@@ -111,7 +111,7 @@ def test_nodes_2d_3b():
 
 #==============================================================================
 def test_nodes_2d_4():
-    loop = LoopLocalQuadrature([])
+    loop = loop_local_quadrature([])
     # TODO do we need nderiv here?
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
     print(pycode(stmt))
@@ -119,8 +119,8 @@ def test_nodes_2d_4():
 
 #==============================================================================
 def test_nodes_2d_5():
-    loop = LoopLocalQuadrature([])
-    loop = LoopLocalBasis(u, [loop])
+    loop = loop_local_quadrature([])
+    loop = loop_local_basis(u, [loop])
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
     print()
     print(pycode(stmt))
@@ -131,8 +131,8 @@ def test_nodes_2d_6():
     body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
     body  = [Compute(i) for i in body]
     body += [Accumulate('+', dy(u)*dx(u))]
-    loop = LoopLocalQuadrature(body)
-    loop = LoopLocalBasis(u, [loop])
+    loop = loop_local_quadrature(body)
+    loop = loop_local_basis(u, [loop])
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
     print()
     print(pycode(stmt))
@@ -140,8 +140,8 @@ def test_nodes_2d_6():
 
 #==============================================================================
 def test_nodes_2d_7():
-    loop = LoopLocalQuadrature([])
-    loop = LoopGlobalQuadrature([loop])
+    loop = loop_local_quadrature([])
+    loop = loop_global_quadrature([loop])
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
     print(pycode(stmt))
     print()
@@ -159,11 +159,11 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-#test_nodes_2d_1()
-#test_nodes_2d_2()
-#test_nodes_2d_3a()
-#test_nodes_2d_3b()
-#test_nodes_2d_4()
-#test_nodes_2d_5()
-#test_nodes_2d_6()
+test_nodes_2d_1()
+test_nodes_2d_2()
+test_nodes_2d_3a()
+test_nodes_2d_3b()
+test_nodes_2d_4()
+test_nodes_2d_5()
+test_nodes_2d_6()
 test_nodes_2d_7()

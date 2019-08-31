@@ -384,94 +384,53 @@ class Loop(BaseNode):
         return self._args[2]
 
 #==============================================================================
-class EnumerateLoop(BaseNode):
+def loop_global_quadrature(stmts):
     """
-    class to describe an enumerated loop.
     """
+    g_quad  = GlobalQuadrature()
+    l_quad  = LocalQuadrature()
 
-    def __new__(cls, indices, lengths, iterator, iterable, stmts):
-        # TODO sympy conform for indices, iterator, interable
-        # ...
-        if not isinstance(stmts, (tuple, list, Tuple)):
-            raise TypeError('stmts must be a tuple, list or Tuple')
+    iterator  = Iterator(l_quad)
+    generator = Generator(g_quad, index_element)
 
-        stmts = Tuple(*stmts)
-        # ...
-
-        return Basic.__new__(cls, indices, lengths, iterator, iterable, stmts)
-
-    @property
-    def indices(self):
-        return self._args[0]
-
-    @property
-    def lengths(self):
-        return self._args[1]
-
-    @property
-    def iterator(self):
-        return self._args[2]
-
-    @property
-    def iterable(self):
-        return self._args[3]
-
-    @property
-    def stmts(self):
-        return self._args[4]
+    return Loop(iterator, generator, stmts)
 
 #==============================================================================
-class LoopGlobalQuadrature(Loop):
+def loop_local_quadrature(stmts):
     """
     """
-    def __new__(cls, stmts):
-        g_quad  = GlobalQuadrature()
-        l_quad  = LocalQuadrature()
+    l_quad  = LocalQuadrature()
+    quad    = Quadrature()
 
-        iterator  = Iterator(l_quad)
-        generator = Generator(g_quad, index_element)
+    iterator  = Iterator(quad)
+    generator = Generator(l_quad, index_point)
 
-        return Loop.__new__(cls, iterator, generator, stmts)
+    return Loop(iterator, generator, stmts)
 
 #==============================================================================
-class LoopLocalQuadrature(Loop):
+def loop_global_basis(target, stmts):
     """
     """
-    def __new__(cls, stmts):
-        l_quad  = LocalQuadrature()
-        quad    = Quadrature()
+    g_quad  = GlobalBasis(target)
+    l_quad  = LocalBasis(target)
 
-        iterator  = Iterator(quad)
-        generator = Generator(l_quad, index_point)
+    iterator  = Iterator(l_quad)
+    # TODO
+    generator = Generator(g_quad, index_element)
 
-        return Loop.__new__(cls, iterator, generator, stmts)
+    return Loop(iterator, generator, stmts)
 
 #==============================================================================
-class LoopGlobalBasis(Loop):
+def loop_local_basis(target, stmts):
     """
     """
-    def __new__(cls, target, stmts):
-        g_quad  = GlobalBasis(target)
-        l_quad  = LocalBasis(target)
+    l_quad  = LocalBasis(target)
+    quad    = Basis(target)
 
-        iterator  = Iterator(l_quad)
-        # TODO
-        generator = Generator(g_quad, index_element)
+    iterator  = Iterator(quad)
+    generator = Generator(l_quad, index_dof)
 
-        return Loop.__new__(cls, iterator, generator, stmts)
-
-#==============================================================================
-class LoopLocalBasis(Loop):
-    """
-    """
-    def __new__(cls, target, stmts):
-        l_quad  = LocalBasis(target)
-        quad    = Basis(target)
-
-        iterator  = Iterator(quad)
-        generator = Generator(l_quad, index_dof)
-
-        return Loop.__new__(cls, iterator, generator, stmts)
+    return Loop(iterator, generator, stmts)
 
 #==============================================================================
 class SplitArray(BaseNode):
