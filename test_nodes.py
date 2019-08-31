@@ -272,6 +272,10 @@ def teardown_function():
 
 
 #==============================================================================
+#import sys; sys.exit(0)
+
+
+
 # tests without assert
 test_nodes_2d_1()
 test_nodes_2d_2()
