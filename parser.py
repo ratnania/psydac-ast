@@ -487,10 +487,19 @@ class Parser(object):
 
         iterations = [self._visit(i) for i in iterations]
         indices, lengths, inits = zip(*iterations)
-        # flattening the list of lists
-        indices = [x for xs in indices for x in xs]
-        lengths = [x for xs in lengths for x in xs]
-        inits   = [x for xs in inits   for x in xs]
+        # indices and lengths are suppose to be repeated here
+        # we only take the first occurence
+        indices = indices[0]
+        lengths = lengths[0]
+
+        inits_0 = inits[0]
+        dim = self.dim
+        for init in inits[1:]:
+            for i in range(dim):
+                inits_0[i] += init[i]
+
+        inits = inits_0
+
 #        print('> indices = ', indices)
 #        print('> lengths = ', lengths)
 #        print('> inits   = ', inits  )

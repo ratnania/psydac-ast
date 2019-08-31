@@ -159,6 +159,22 @@ def test_nodes_2d_8():
     print(pycode(stmt))
     print()
 
+#==============================================================================
+def test_nodes_2d_9():
+    iterator  = (l_quad, span)
+    iterator  = [Iterator(i) for i in iterator]
+
+    generator  = (g_quad, g_span)
+    generator  = [Generator(i, index_element) for i in generator]
+
+    stmts = []
+    loop = Loop(iterator, generator, stmts)
+
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
 
 
 #==============================================================================
@@ -182,3 +198,4 @@ test_nodes_2d_5()
 test_nodes_2d_6()
 test_nodes_2d_7()
 test_nodes_2d_8()
+test_nodes_2d_9()
