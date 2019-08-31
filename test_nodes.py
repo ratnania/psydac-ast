@@ -276,9 +276,8 @@ def teardown_function():
 
 
 #==============================================================================
-#test_nodes_2d_11()
-##test_nodes_2d_6c()
-#import sys; sys.exit(0)
+test_nodes_2d_11()
+import sys; sys.exit(0)
 
 
 
