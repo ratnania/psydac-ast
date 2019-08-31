@@ -198,6 +198,8 @@ class GlobalBasis(ArrayNode):
     """
     """
     _rank = 4
+    _positions = {index_point: 3, index_deriv: 2, index_dof: 1, index_element: 0}
+    _free_positions = [index_element]
 
     def __new__(cls, target):
         if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
@@ -214,7 +216,6 @@ class LocalBasis(ArrayNode):
     """
     """
     _rank = 3
-    # TODO add index derivative
     _positions = {index_point: 2, index_deriv: 1, index_dof: 0}
     _free_positions = [index_point, index_dof]
 

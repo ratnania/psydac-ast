@@ -213,7 +213,21 @@ class Parser(object):
 
     # ....................................................
     def _visit_GlobalBasis(self, expr):
-        raise NotImplementedError('TODO')
+        # TODO add label
+        # TODO add ln
+        dim = self.dim
+        rank = expr.rank
+        ln = 1
+        if ln > 1:
+            names = 'global_basis_1:%s(1:%s)'%(dim+1,ln+1)
+        else:
+            names = 'global_basis_1:%s'%(dim+1)
+
+        target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+        if not isinstance(target[0], (tuple, list, Tuple)):
+            target = [target]
+        target = list(zip(*target))
+        return target
 
     # ....................................................
     def _visit_LocalBasis(self, expr):
@@ -223,9 +237,9 @@ class Parser(object):
         rank = expr.rank
         ln = 1
         if ln > 1:
-            names = 'basis_1:%s(1:%s)'%(dim+1,ln+1)
+            names = 'local_basis_1:%s(1:%s)'%(dim+1,ln+1)
         else:
-            names = 'basis_1:%s'%(dim+1)
+            names = 'local_basis_1:%s'%(dim+1)
 
         target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
         if not isinstance(target[0], (tuple, list, Tuple)):
