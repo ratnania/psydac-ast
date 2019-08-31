@@ -15,12 +15,13 @@ from pyccel.ast import Slice
 from sympde.topology import (dx, dy, dz)
 from sympde.topology import (dx1, dx2, dx3)
 from sympde.topology import SymbolicExpr
-from sympde.topology.derivatives import get_index_derivatives
+from sympde.topology.derivatives import get_index_logical_derivatives
 from sympde.topology import element_of
 from sympde.expr.evaluation import _split_test_function
 
 from nodes import BasisAtom
 from nodes import BasisValue
+from nodes import LogicalBasisValue
 from nodes import Quadrature
 from nodes import Basis
 from nodes import GlobalQuadrature
@@ -267,6 +268,18 @@ class Parser(object):
         return AugAssign(lhs, op, rhs)
 
     # ....................................................
+    def _visit_ComputeLogical(self, expr):
+        expr = expr.expr
+        if not isinstance(expr, (Add, Mul)):
+            lhs = self._visit(BasisAtom(expr))
+        else:
+            lhs = random_string( 6 )
+            lhs = Symbol('tmp_{}'.format(lhs))
+
+        rhs = self._visit(LogicalBasisValue(expr))
+        return Assign(lhs, rhs)
+
+    # ....................................................
     def _visit_Compute(self, expr):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
@@ -292,10 +305,10 @@ class Parser(object):
         return symbol
 
     # ....................................................
-    def _visit_BasisValue(self, expr):
+    def _visit_LogicalBasisValue(self, expr):
         # ...
         dim = self.dim
-        coords = ['x', 'y', 'z'][:dim]
+        coords = ['x1', 'x2', 'x3'][:dim]
 
         expr   = expr.expr
         atom   = BasisAtom(expr).atom
@@ -304,7 +317,7 @@ class Parser(object):
         ops = [dx1, dx2, dx3][:dim]
         d_atoms = dict(zip(coords, atoms))
         d_ops   = dict(zip(coords, ops))
-        d_indices = get_index_derivatives(expr)
+        d_indices = get_index_logical_derivatives(expr)
         args = []
         for k,u in d_atoms.items():
             d = d_ops[k]
@@ -316,7 +329,11 @@ class Parser(object):
 
         expr = Mul(*args)
         return SymbolicExpr(expr)
+
     # ....................................................
+    def _visit_BasisValue(self, expr):
+        print('>>> _visit_BasisValue :  IMPROVE')
+        return SymbolicExpr(expr.expr)
 
     # ....................................................
     def _visit_Pattern(self, expr):

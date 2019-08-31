@@ -304,6 +304,17 @@ class Compute(Basic):
         return self._args[0]
 
 #==============================================================================
+class ComputeLogical(Basic):
+    """
+    """
+    def __new__(cls, expr):
+        return Basic.__new__(cls, expr)
+
+    @property
+    def expr(self):
+        return self._args[0]
+
+#==============================================================================
 class Accumulate(Basic):
     """
     """
@@ -367,6 +378,17 @@ class BasisAtom(AtomicNode):
 
 #==============================================================================
 class BasisValue(ValueNode):
+    """
+    """
+    def __new__(cls, expr):
+        return Basic.__new__(cls, expr)
+
+    @property
+    def expr(self):
+        return self._args[0]
+
+#==============================================================================
+class LogicalBasisValue(ValueNode):
     """
     """
     def __new__(cls, expr):
