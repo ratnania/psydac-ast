@@ -20,7 +20,7 @@ from sympde.topology import element_of
 from sympde.expr.evaluation import _split_test_function
 
 from nodes import BasisAtom
-from nodes import BasisValue
+from nodes import PhysicalBasisValue
 from nodes import LogicalBasisValue
 from nodes import Quadrature
 from nodes import Basis
@@ -280,7 +280,7 @@ class Parser(object):
         return Assign(lhs, rhs)
 
     # ....................................................
-    def _visit_Compute(self, expr):
+    def _visit_ComputePhysical(self, expr):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
             lhs = self._visit(BasisAtom(expr))
@@ -288,7 +288,7 @@ class Parser(object):
             lhs = random_string( 6 )
             lhs = Symbol('tmp_{}'.format(lhs))
 
-        rhs = self._visit(BasisValue(expr))
+        rhs = self._visit(PhysicalBasisValue(expr))
         return Assign(lhs, rhs)
 
     # ....................................................
@@ -331,8 +331,8 @@ class Parser(object):
         return SymbolicExpr(expr)
 
     # ....................................................
-    def _visit_BasisValue(self, expr):
-        print('>>> _visit_BasisValue :  IMPROVE')
+    def _visit_PhysicalBasisValue(self, expr):
+        print('>>> _visit_PhysicalBasisValue :  IMPROVE')
         return SymbolicExpr(expr.expr)
 
     # ....................................................

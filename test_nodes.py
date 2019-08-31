@@ -27,7 +27,7 @@ from nodes import Basis
 from nodes import GlobalSpan
 from nodes import Span
 from nodes import BasisAtom
-from nodes import BasisValue
+from nodes import PhysicalBasisValue
 from nodes import LogicalBasisValue
 from nodes import index_element
 from nodes import index_point
@@ -37,9 +37,9 @@ from nodes import loop_global_quadrature
 from nodes import loop_local_basis
 from nodes import loop_global_basis
 from nodes import loop_global_span
-from nodes import Compute
+from nodes import ComputePhysical
 from nodes import ComputeLogical
-from nodes import Accumulate
+#from nodes import Accumulate # TODO fix
 
 from parser import parse
 
@@ -95,7 +95,7 @@ def test_nodes_2d_2():
 def test_nodes_2d_3a():
     expr = dx(u)
     lhs  = BasisAtom(expr)
-    rhs  = BasisValue(expr)
+    rhs  = PhysicalBasisValue(expr)
 
     assert(lhs.atom == u)
     assert(parse(lhs) == Symbol('u_x'))
@@ -113,7 +113,7 @@ def test_nodes_2d_3a():
 def test_nodes_2d_3b():
     expr = dy(dx(u))
     lhs  = BasisAtom(expr)
-    rhs  = BasisValue(expr)
+    rhs  = PhysicalBasisValue(expr)
 
     print(parse(lhs) )
     print(parse(rhs) )
@@ -140,8 +140,8 @@ def test_nodes_2d_5():
 #==============================================================================
 def test_nodes_2d_6a():
     body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
-    body  = [Compute(i) for i in body]
-    body += [Accumulate('+', dy(u)*dx(u))]
+    body  = [ComputePhysical(i) for i in body]
+#    body += [Accumulate('+', dy(u)*dx(u))]
     loop = loop_local_quadrature(body)
     loop = loop_local_basis(u, [loop])
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
@@ -212,8 +212,8 @@ def test_nodes_2d_10():
 def test_nodes_2d_11():
     # ...
     body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
-    body  = [Compute(i) for i in body]
-    body += [Accumulate('+', dy(u)*dx(u))]
+    body  = [ComputePhysical(i) for i in body]
+#    body += [Accumulate('+', dy(u)*dx(u))]
     loop = loop_local_quadrature(body)
     loop = loop_local_basis(u, [loop])
     # ...

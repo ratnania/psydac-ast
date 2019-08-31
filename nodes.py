@@ -293,7 +293,7 @@ class MappingEvaluation(Evaluation):
     pass
 
 #==============================================================================
-class Compute(Basic):
+class ComputePhysical(Basic):
     """
     """
     def __new__(cls, expr):
@@ -377,7 +377,7 @@ class BasisAtom(AtomicNode):
         return self._atom
 
 #==============================================================================
-class BasisValue(ValueNode):
+class PhysicalBasisValue(ValueNode):
     """
     """
     def __new__(cls, expr):
