@@ -191,6 +191,30 @@ def test_nodes_2d_10():
     print(pycode(stmt))
     print()
 
+#==============================================================================
+def test_nodes_2d_11():
+    # ...
+    body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+    body  = [Compute(i) for i in body]
+    body += [Accumulate('+', dy(u)*dx(u))]
+    loop = loop_local_quadrature(body)
+    loop = loop_local_basis(u, [loop])
+    # ...
+
+    iterator  = (l_quad, l_basis, span)
+    iterator  = [Iterator(i) for i in iterator]
+
+    generator  = (g_quad, g_basis, g_span)
+    generator  = [Generator(i, index_element) for i in generator]
+
+    stmts = [loop]
+    loop = Loop(iterator, generator, stmts)
+
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
 
 
 #==============================================================================
@@ -215,4 +239,5 @@ def teardown_function():
 #test_nodes_2d_7()
 #test_nodes_2d_8()
 #test_nodes_2d_9()
-test_nodes_2d_10()
+#test_nodes_2d_10()
+test_nodes_2d_11()
