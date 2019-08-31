@@ -13,10 +13,11 @@ from pyccel.ast import Variable, IndexedVariable, IndexedElement
 from pyccel.ast import Slice
 
 from sympde.topology import (dx, dy, dz)
+from sympde.topology import (dx1, dx2, dx3)
 from sympde.topology import SymbolicExpr
 from sympde.topology.derivatives import get_index_derivatives
 from sympde.topology import element_of
-#from sympde.expr.evaluation import _split_test_function # TODO use it
+from sympde.expr.evaluation import _split_test_function
 
 from nodes import BasisAtom
 from nodes import BasisValue
@@ -42,48 +43,6 @@ def random_string( n ):
     chars    = string.ascii_lowercase + string.digits
     selector = random.SystemRandom()
     return ''.join( selector.choice( chars ) for _ in range( n ) )
-
-#==============================================================================
-# TODO must be moved to sympde
-# TODO re-test gelato
-from sympde.topology import ScalarTestFunction
-from sympde.topology import ScalarFunctionSpace
-from sympde.topology import Interval
-def _split_test_function(expr):
-
-    if isinstance(expr, ScalarTestFunction):
-
-        dim = expr.space.ldim
-        coords = ['x', 'y', 'z'][:dim]
-        coords = [Symbol(i) for i in coords]
-        name = expr.name
-
-        ls = []
-        for i in range(0, dim):
-            Di = Interval(coordinate=coords[i])
-            Vi = ScalarFunctionSpace('tmp_V_{}'.format(i), domain=Di)
-
-            ai = ScalarTestFunction(Vi, '{name}{i}'.format(name=name, i=i+1))
-            ls += [ai]
-
-        return ls
-
-    # TODO
-#    elif isinstance(expr, IndexedTestTrial):
-#
-#        i = expr.indices
-#        assert(len(i) == 1)
-#        i = i[0]
-#
-#        V = expr.base.space
-#        Vi = ScalarFunctionSpace('tmpV_{}'.format(i), V.domain)
-#        vi = ScalarTestFunction(Vi, '{test}{i}'.format(test=expr.base.name, i=i))
-#
-#        return _split_test_function(vi)
-
-    else:
-        msg = 'Expecting ScalarTestFunction or IndexedTestTrial, given {}'.format(type(expr))
-        raise TypeError(msg)
 
 #==============================================================================
 _length_of_registery = {index_point:   length_point,
@@ -253,9 +212,11 @@ class Parser(object):
         dim = self.dim
         nderiv = self.nderiv
         target = expr.target
-        ops = [dx, dy, dz][:dim]
-        args = []
+
+        ops = [dx1, dx2, dx3][:dim]
         atoms =  _split_test_function(target)
+
+        args = []
         for i,atom in enumerate(atoms):
             d = ops[i]
             ls = [atom]
@@ -333,13 +294,27 @@ class Parser(object):
     # ....................................................
     def _visit_BasisValue(self, expr):
         # ...
+        dim = self.dim
+        coords = ['x', 'y', 'z'][:dim]
+
         expr   = expr.expr
         atom   = BasisAtom(expr).atom
         atoms  = _split_test_function(atom)
+
+        ops = [dx1, dx2, dx3][:dim]
+        d_atoms = dict(zip(coords, atoms))
+        d_ops   = dict(zip(coords, ops))
+        d_indices = get_index_derivatives(expr)
+        args = []
+        for k,u in d_atoms.items():
+            d = d_ops[k]
+            n = d_indices[k]
+            for i in range(n):
+                u = d(u)
+            args.append(u)
         # ...
 
-        new = Mul(*atoms)
-        expr = expr.subs({atom: new})
+        expr = Mul(*args)
         return SymbolicExpr(expr)
     # ....................................................
 

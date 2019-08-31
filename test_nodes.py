@@ -133,9 +133,12 @@ def test_nodes_2d_5():
 
 #==============================================================================
 def test_nodes_2d_6():
-    body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+#    body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+#    body  = [Compute(i) for i in body]
+#    body += [Accumulate('+', dy(u)*dx(u))]
+    body  = [dx(u)]
     body  = [Compute(i) for i in body]
-    body += [Accumulate('+', dy(u)*dx(u))]
+#    body += [Accumulate('+', dy(u)*dx(u))]
     loop = loop_local_quadrature(body)
     loop = loop_local_basis(u, [loop])
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
@@ -235,9 +238,9 @@ def teardown_function():
 #test_nodes_2d_3b()
 #test_nodes_2d_4()
 #test_nodes_2d_5()
-#test_nodes_2d_6()
+test_nodes_2d_6()
 #test_nodes_2d_7()
 #test_nodes_2d_8()
 #test_nodes_2d_9()
 #test_nodes_2d_10()
-test_nodes_2d_11()
+#test_nodes_2d_11()
