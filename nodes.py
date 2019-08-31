@@ -382,12 +382,31 @@ class Loop(BaseNode):
     """
 
     def __new__(cls, iterator, generator, stmts=None):
+        # TODO stmts should not be optional
         # ...
-        if not( isinstance(iterator, Iterator) ):
-            raise TypeError('Expecting an Iterator')
+        if isinstance(iterator, Iterator):
+            iterator = [iterator]
 
-        if not( isinstance(generator, Generator) ):
-            raise TypeError('Expecting a Generator')
+        if not( isinstance(iterator, (list, tuple, Tuple)) ):
+            raise TypeError('Expecting an iterable')
+
+        if not all([isinstance(i, Iterator) for i in iterator]):
+            raise TypeError('Expecting a list of Iterator')
+
+        iterator = Tuple(*iterator)
+        # ...
+
+        # ...
+        if isinstance(generator, Generator):
+            generator = [generator]
+
+        if not( isinstance(generator, (list, tuple, Tuple)) ):
+            raise TypeError('Expecting an iterable')
+
+        if not all([isinstance(i, Generator) for i in generator]):
+            raise TypeError('Expecting a list of Generator')
+
+        generator = Tuple(*generator)
         # ...
 
         # ...
@@ -413,6 +432,30 @@ class Loop(BaseNode):
     @property
     def stmts(self):
         return self._args[2]
+
+#==============================================================================
+class IterationStatement(BaseNode):
+    """
+    """
+
+    def __new__(cls, iterator, generator):
+        # ...
+        if not( isinstance(iterator, Iterator) ):
+            raise TypeError('Expecting an Iterator')
+
+        if not( isinstance(generator, Generator) ):
+            raise TypeError('Expecting a Generator')
+        # ...
+
+        return Basic.__new__(cls, iterator, generator)
+
+    @property
+    def iterator(self):
+        return self._args[0]
+
+    @property
+    def generator(self):
+        return self._args[1]
 
 #==============================================================================
 def loop_global_quadrature(stmts):

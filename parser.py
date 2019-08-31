@@ -31,6 +31,7 @@ from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
 from nodes import Accumulate
+from nodes import IterationStatement
 
 
 #==============================================================================
@@ -433,16 +434,9 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_Loop(self, expr):
-#        print('**** Enter Loop ')
+    def _visit_IterationStatement(self, expr):
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
-
-        # check if there is an accumulation
-        # TODO init accumulation vars
-#        accumulations = expr.stmts.atoms(Accumulate)
-
-        stmts     = self._visit(expr.stmts)
 
         dummies = expr.generator.dummies
         lengths = [_length_of_registery[i] for i in dummies]
@@ -482,8 +476,33 @@ class Parser(object):
             inits.append(ls)
         # ...
 
+        return  indices, lengths, inits
+
+    # ....................................................
+    def _visit_Loop(self, expr):
+#        print('**** Enter Loop ')
+        # create iteration statements
+        iterations = [IterationStatement(i,j)
+                      for i,j in zip(expr.iterator, expr.generator)]
+
+        iterations = [self._visit(i) for i in iterations]
+        indices, lengths, inits = zip(*iterations)
+        # flattening the list of lists
+        indices = [x for xs in indices for x in xs]
+        lengths = [x for xs in lengths for x in xs]
+        inits   = [x for xs in inits   for x in xs]
+#        print('> indices = ', indices)
+#        print('> lengths = ', lengths)
+#        print('> inits   = ', inits  )
+#        import sys; sys.exit(0)
+
+        # check if there is an accumulation
+        # TODO init accumulation vars
+#        accumulations = expr.stmts.atoms(Accumulate)
+
         # ...
-        body = list(stmts)
+        stmts = self._visit(expr.stmts)
+        body  = list(stmts)
         for index, length, init in zip(indices, lengths, inits):
             if len(length) == 1:
                 l = length[0]
