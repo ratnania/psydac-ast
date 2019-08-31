@@ -15,6 +15,8 @@ from pyccel.ast import Slice
 from sympde.topology import (dx, dy, dz)
 from sympde.topology import (dx1, dx2, dx3)
 from sympde.topology import SymbolicExpr
+from sympde.topology import LogicalExpr
+from sympde.topology import IdentityMapping
 from sympde.topology.derivatives import get_index_logical_derivatives
 from sympde.topology import element_of
 from sympde.expr.evaluation import _split_test_function
@@ -75,6 +77,18 @@ class Parser(object):
         self._nderiv = nderiv
         # ...
 
+        # ...
+        # TODO dim must be available !
+        mapping = None
+        if not( settings is None ):
+            mapping = settings.pop('mapping', None)
+
+        if mapping is None:
+            mapping = IdentityMapping('Map', dim)
+
+        self._mapping = mapping
+        # ...
+
         self._settings = settings
 
         # TODO improve
@@ -92,6 +106,10 @@ class Parser(object):
     @property
     def nderiv(self):
         return self._nderiv
+
+    @property
+    def mapping(self):
+        return self._mapping
 
     def doit(self, expr, **settings):
         return self._visit(expr, **settings)
@@ -332,8 +350,10 @@ class Parser(object):
 
     # ....................................................
     def _visit_PhysicalBasisValue(self, expr):
-        print('>>> _visit_PhysicalBasisValue :  IMPROVE')
-        return SymbolicExpr(expr.expr)
+        mapping = self.mapping
+        expr = LogicalExpr(mapping, expr.expr)
+
+        return SymbolicExpr(expr)
 
     # ....................................................
     def _visit_Pattern(self, expr):

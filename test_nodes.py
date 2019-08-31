@@ -161,6 +161,23 @@ def test_nodes_2d_6b():
     print()
 
 #==============================================================================
+def test_nodes_2d_6c():
+    body = []
+
+    expressions  = [dx1(u), dx2(u)]
+    body += [ComputeLogical(i) for i in expressions]
+
+    expressions  = [dx(u)]
+    body += [ComputePhysical(i) for i in expressions]
+
+    loop = loop_local_quadrature(body)
+    loop = loop_local_basis(u, [loop])
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
+    print()
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
 def test_nodes_2d_7():
     loop = loop_local_quadrature([])
     loop = loop_global_quadrature([loop])
@@ -246,16 +263,18 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-test_nodes_2d_1()
-test_nodes_2d_2()
-test_nodes_2d_3a()
-test_nodes_2d_3b()
-test_nodes_2d_4()
-test_nodes_2d_5()
-test_nodes_2d_6a()
-test_nodes_2d_6b()
-test_nodes_2d_7()
-test_nodes_2d_8()
-test_nodes_2d_9()
-test_nodes_2d_10()
-test_nodes_2d_11()
+#test_nodes_2d_1()
+#test_nodes_2d_2()
+#test_nodes_2d_3a()
+#test_nodes_2d_3b()
+#test_nodes_2d_4()
+#test_nodes_2d_5()
+#test_nodes_2d_6a()
+#test_nodes_2d_6b()
+#test_nodes_2d_7()
+#test_nodes_2d_8()
+#test_nodes_2d_9()
+#test_nodes_2d_10()
+#test_nodes_2d_11()
+
+test_nodes_2d_6c()
