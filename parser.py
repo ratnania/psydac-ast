@@ -254,6 +254,31 @@ class Parser(object):
         return args
 
     # ....................................................
+    def _visit_GlobalSpan(self, expr):
+        dim = self.dim
+        rank = expr.rank
+
+        names  = 'global_span1:%s'%(dim+1)
+        target = variables(names, dtype='int', rank=rank, cls=IndexedVariable)
+
+        if not isinstance(target[0], (tuple, list, Tuple)):
+            target = [target]
+        target = list(zip(*target))
+        return target
+
+    # ....................................................
+    def _visit_Span(self, expr):
+        dim = self.dim
+
+        names  = 'span1:%s'%(dim+1)
+        target = variables(names, dtype='int', cls=Variable)
+
+        if not isinstance(target[0], (tuple, list, Tuple)):
+            target = [target]
+        target = list(zip(*target))
+        return target
+
+    # ....................................................
     def _visit_Accumulate(self, expr):
         op   = expr.op
         expr = expr.expr

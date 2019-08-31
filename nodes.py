@@ -243,6 +243,37 @@ class Basis(ScalarNode):
         return self._args[0]
 
 #==============================================================================
+class GlobalSpan(ArrayNode):
+    """
+    """
+    _rank = 1
+    _positions = {index_element: 0}
+
+    def __new__(cls, target):
+        if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
+            raise TypeError('Expecting a scalar/vector test function')
+
+        return Basic.__new__(cls, target)
+
+    @property
+    def target(self):
+        return self._args[0]
+
+#==============================================================================
+class Span(ScalarNode):
+    """
+    """
+    def __new__(cls, target):
+        if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
+            raise TypeError('Expecting a scalar/vector test function')
+
+        return Basic.__new__(cls, target)
+
+    @property
+    def target(self):
+        return self._args[0]
+
+#==============================================================================
 class Evaluation(BaseNode):
     """
     """
@@ -429,6 +460,18 @@ def loop_local_basis(target, stmts):
 
     iterator  = Iterator(quad)
     generator = Generator(l_quad, index_dof)
+
+    return Loop(iterator, generator, stmts)
+
+#==============================================================================
+def loop_global_span(target, stmts):
+    """
+    """
+    g_span = GlobalSpan(target)
+    span   = Span(target)
+
+    iterator  = Iterator(span)
+    generator = Generator(g_span, index_element)
 
     return Loop(iterator, generator, stmts)
 

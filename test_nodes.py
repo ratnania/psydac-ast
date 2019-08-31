@@ -23,6 +23,8 @@ from nodes import Quadrature
 from nodes import GlobalBasis
 from nodes import LocalBasis
 from nodes import Basis
+from nodes import GlobalSpan
+from nodes import Span
 from nodes import BasisAtom
 from nodes import BasisValue
 from nodes import index_element
@@ -32,6 +34,7 @@ from nodes import loop_local_quadrature
 from nodes import loop_global_quadrature
 from nodes import loop_local_basis
 from nodes import loop_global_basis
+from nodes import loop_global_span
 from nodes import Compute
 from nodes import Accumulate
 
@@ -53,6 +56,8 @@ quad    = Quadrature()
 g_basis = GlobalBasis(u)
 l_basis = LocalBasis(u)
 basis   = Basis(u)
+g_span  = GlobalSpan(u)
+span    = Span(u)
 # ...
 
 #==============================================================================
@@ -146,6 +151,15 @@ def test_nodes_2d_7():
     print(pycode(stmt))
     print()
 
+#==============================================================================
+def test_nodes_2d_8():
+    loop = loop_global_span(u, [])
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
+
 
 #==============================================================================
 # CLEAN UP SYMPY NAMESPACE
@@ -159,11 +173,12 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-test_nodes_2d_1()
-test_nodes_2d_2()
-test_nodes_2d_3a()
-test_nodes_2d_3b()
-test_nodes_2d_4()
-test_nodes_2d_5()
-test_nodes_2d_6()
-test_nodes_2d_7()
+#test_nodes_2d_1()
+#test_nodes_2d_2()
+#test_nodes_2d_3a()
+#test_nodes_2d_3b()
+#test_nodes_2d_4()
+#test_nodes_2d_5()
+#test_nodes_2d_6()
+#test_nodes_2d_7()
+test_nodes_2d_8()
