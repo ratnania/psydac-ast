@@ -97,15 +97,15 @@ def test_nodes_2d_3a():
     lhs  = BasisAtom(expr)
     rhs  = PhysicalBasisValue(expr)
 
+    settings = {'dim': domain.dim, 'nderiv': 1}
+    _parse = lambda expr: parse(expr, settings=settings)
+
+    u_x  = Symbol('u_x')
+    u_x1 = Symbol('u_x1')
+
     assert(lhs.atom == u)
-    assert(parse(lhs) == Symbol('u_x'))
-
-    print(parse(rhs))
-
-    # TODO fix
-#    u1_x = Symbol('u1_x')
-#    u2   = Symbol('u2')
-#    assert(parse(rhs) == u1_x*u2)
+    assert(_parse(lhs) == u_x)
+    assert(_parse(rhs) == u_x1)
 
     print()
 
@@ -115,8 +115,15 @@ def test_nodes_2d_3b():
     lhs  = BasisAtom(expr)
     rhs  = PhysicalBasisValue(expr)
 
-    print(parse(lhs) )
-    print(parse(rhs) )
+    settings = {'dim': domain.dim, 'nderiv': 1}
+    _parse = lambda expr: parse(expr, settings=settings)
+
+    u_xy   = Symbol('u_xy')
+    u_x1x2 = Symbol('u_x1x2')
+
+    assert(lhs.atom == u)
+    assert(_parse(lhs) == u_xy)
+    assert(_parse(rhs) == u_x1x2)
 
     print()
 
@@ -263,18 +270,22 @@ def teardown_function():
     from sympy import cache
     cache.clear_cache()
 
-#test_nodes_2d_1()
-#test_nodes_2d_2()
-#test_nodes_2d_3a()
-#test_nodes_2d_3b()
-#test_nodes_2d_4()
-#test_nodes_2d_5()
-#test_nodes_2d_6a()
-#test_nodes_2d_6b()
-#test_nodes_2d_7()
-#test_nodes_2d_8()
-#test_nodes_2d_9()
-#test_nodes_2d_10()
-#test_nodes_2d_11()
 
+#==============================================================================
+# tests without assert
+test_nodes_2d_1()
+test_nodes_2d_2()
+test_nodes_2d_4()
+test_nodes_2d_5()
+test_nodes_2d_6a()
+test_nodes_2d_6b()
 test_nodes_2d_6c()
+test_nodes_2d_7()
+test_nodes_2d_8()
+test_nodes_2d_9()
+test_nodes_2d_10()
+test_nodes_2d_11()
+
+# tests with assert
+test_nodes_2d_3a()
+test_nodes_2d_3b()

@@ -19,6 +19,7 @@ from sympde.topology import LogicalExpr
 from sympde.topology import IdentityMapping
 from sympde.topology.derivatives import get_index_logical_derivatives
 from sympde.topology import element_of
+from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.expr.evaluation import _split_test_function
 
 from nodes import BasisAtom
@@ -57,6 +58,10 @@ class Parser(object):
     """
     """
     def __init__(self, settings=None):
+        # use a local copy (because of pop)
+        if not settings is None:
+            settings = settings.copy()
+
         # ...
         dim = None
         if not( settings is None ):
