@@ -40,6 +40,7 @@ from nodes import loop_global_span
 from nodes import ComputePhysical
 from nodes import ComputeLogical
 #from nodes import Accumulate # TODO fix
+from nodes import construct_logical_expressions
 
 from parser import parse
 
@@ -235,9 +236,12 @@ def test_nodes_2d_10():
 #==============================================================================
 def test_nodes_2d_11():
     # ...
-    body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
-    body  = [ComputePhysical(i) for i in body]
-#    body += [Accumulate('+', dy(u)*dx(u))]
+    nderiv = 2
+    body = construct_logical_expressions(u, nderiv)
+
+    expressions = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+    body  += [ComputePhysical(i) for i in expressions]
+
     loop = loop_local_quadrature(body)
     loop = loop_local_basis(u, [loop])
     # ...
@@ -252,7 +256,7 @@ def test_nodes_2d_11():
     loop = Loop(iterator, generator, stmts)
 
     # TODO do we need nderiv here?
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
     print(pycode(stmt))
     print()
 
@@ -272,6 +276,8 @@ def teardown_function():
 
 
 #==============================================================================
+#test_nodes_2d_11()
+##test_nodes_2d_6c()
 #import sys; sys.exit(0)
 
 

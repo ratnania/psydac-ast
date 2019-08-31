@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from itertools import product
 
 from sympy import Basic
 from sympy.core.singleton import Singleton
@@ -6,6 +7,8 @@ from sympy.core.compatibility import with_metaclass
 from sympy.core.containers import Tuple
 
 from sympde.topology import ScalarTestFunction, VectorTestFunction
+from sympde.topology import (dx1, dx2, dx3)
+
 
 #==============================================================================
 class ArityType(with_metaclass(Singleton, Basic)):
@@ -567,3 +570,27 @@ class SplitArray(BaseNode):
     @property
     def lengths(self):
         return self._args[2]
+
+#==============================================================================
+def construct_logical_expressions(u, nderiv):
+    dim = u.space.ldim
+
+    ops = [dx1, dx2, dx3][:dim]
+    r = range(nderiv+1)
+    ranges = [r]*dim
+    indices = product(*ranges)
+
+    indices = list(indices)
+    indices = [ijk for ijk in indices if sum(ijk) <= nderiv]
+
+    args = []
+    for ijk in indices:
+        atom = u
+        for n,op in zip(ijk, ops):
+            for i in range(1, n+1):
+                atom = op(atom)
+        args.append(atom)
+
+    return [ComputeLogical(i) for i in args]
+
+
