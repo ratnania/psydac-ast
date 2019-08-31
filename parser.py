@@ -552,6 +552,9 @@ class Parser(object):
             body = [For(i, Product(*ranges), body)]
         # ...
 
+        # remove the list and return the For Node only
+        body = body[0]
+
 #        print('**** End   Loop ')
         return body
 
