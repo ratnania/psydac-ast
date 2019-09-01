@@ -84,7 +84,7 @@ class Pattern(Tuple):
     pass
 
 #==============================================================================
-class IteratorNode(BaseNode):
+class IteratorBase(BaseNode):
     """
     """
     def __new__(cls, target, dummies=None):
@@ -104,11 +104,11 @@ class IteratorNode(BaseNode):
         return self._args[1]
 
 #==============================================================================
-class TensorIterator(IteratorNode):
+class TensorIterator(IteratorBase):
     pass
 
 #==============================================================================
-class GeneratorNode(BaseNode):
+class GeneratorBase(BaseNode):
     """
     """
     def __new__(cls, target, dummies):
@@ -130,7 +130,7 @@ class GeneratorNode(BaseNode):
         return self._args[1]
 
 #==============================================================================
-class TensorGenerator(GeneratorNode):
+class TensorGenerator(GeneratorBase):
     pass
 
 #==============================================================================
@@ -494,26 +494,26 @@ class Loop(BaseNode):
     def __new__(cls, iterator, generator, stmts=None):
         # TODO stmts should not be optional
         # ...
-        if isinstance(iterator, IteratorNode):
+        if isinstance(iterator, IteratorBase):
             iterator = [iterator]
 
         if not( isinstance(iterator, (list, tuple, Tuple)) ):
             raise TypeError('Expecting an iterable')
 
-        if not all([isinstance(i, IteratorNode) for i in iterator]):
+        if not all([isinstance(i, IteratorBase) for i in iterator]):
             raise TypeError('Expecting a list of Iterator')
 
         iterator = Tuple(*iterator)
         # ...
 
         # ...
-        if isinstance(generator, GeneratorNode):
+        if isinstance(generator, GeneratorBase):
             generator = [generator]
 
         if not( isinstance(generator, (list, tuple, Tuple)) ):
             raise TypeError('Expecting an iterable')
 
-        if not all([isinstance(i, GeneratorNode) for i in generator]):
+        if not all([isinstance(i, GeneratorBase) for i in generator]):
             raise TypeError('Expecting a list of Generator')
 
         generator = Tuple(*generator)
