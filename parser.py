@@ -132,10 +132,38 @@ class Parser(object):
 
     # ....................................................
     def _visit_Assign(self, expr):
-        lhs = self._visit(expr.lhs)
-        rhs = self._visit(expr.rhs)
+        # TODO do we need this?
+#        lhs = self._visit(expr.lhs)
+#        rhs = self._visit(expr.rhs)
+
+        lhs = expr.lhs
+        rhs = expr.rhs
+
+        # ... extract slices from rhs
+        slices = []
+        if isinstance(rhs, IndexedElement):
+            indices = rhs.indices[0]
+            slices = [i for i in indices if isinstance(i, Slice)]
+        # ...
+
+        # ... update lhs with slices
+        if len(slices) > 0:
+            # TODO add assert on type lhs
+            if isinstance(lhs, (IndexedBase, IndexedVariable)):
+                lhs = lhs[slices]
+
+            elif isinstance(lhs, Symbol):
+                lhs = IndexedBase(lhs.name)[slices]
+
+            else:
+                raise NotImplementedError('{}'.format(type(lhs)))
+        # ...
 
         return Assign(lhs, rhs)
+
+    # ....................................................
+    def _visit_AugAssign(self, expr):
+        raise NotImplementedError('TODO')
 
     # ....................................................
     def _visit_Tuple(self, expr):
@@ -307,7 +335,7 @@ class Parser(object):
         lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(BasisValue(expr))
-        return AugAssign(lhs, op, rhs)
+        return self._visit(AugAssign(lhs, op, rhs))
 
     # ....................................................
     def _visit_ComputeLogical(self, expr):
@@ -319,7 +347,7 @@ class Parser(object):
             lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(LogicalBasisValue(expr))
-        return Assign(lhs, rhs)
+        return self._visit(Assign(lhs, rhs))
 
     # ....................................................
     def _visit_ComputePhysical(self, expr):
@@ -331,7 +359,7 @@ class Parser(object):
             lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(PhysicalBasisValue(expr))
-        return Assign(lhs, rhs)
+        return self._visit(Assign(lhs, rhs))
 
     # ....................................................
     def _visit_FieldEvaluation(self, expr):
@@ -526,7 +554,7 @@ class Parser(object):
                 else:
                     lhs = l_x
 
-                ls += [Assign(lhs, g_x)]
+                ls += [self._visit(Assign(lhs, g_x))]
             inits.append(ls)
         # ...
 
