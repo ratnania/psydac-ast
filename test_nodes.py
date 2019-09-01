@@ -18,10 +18,13 @@ from nodes import Grid
 from nodes import Element
 from nodes import TensorIterator
 from nodes import TensorGenerator
+from nodes import ProductIterator
+from nodes import ProductGenerator
 from nodes import Loop
 from nodes import GlobalTensorQuadrature
 from nodes import LocalTensorQuadrature
 from nodes import TensorQuadrature
+from nodes import MatrixQuadrature
 from nodes import GlobalTensorQuadratureBasis
 from nodes import LocalTensorQuadratureBasis
 from nodes import TensorQuadratureBasis
@@ -308,6 +311,26 @@ def test_nodes_2d_20a():
     print(_parse(rhs))
     print()
 
+#==============================================================================
+def test_nodes_2d_20b():
+    stmts = []
+
+    iterator  = (TensorIterator(quad),
+                 ProductIterator(GeometryAtom(M[0])))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 ProductGenerator(MatrixQuadrature(M[0]), index_quad))
+
+    loop = Loop(iterator, generator, stmts)
+
+    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
+    _parse = lambda expr: parse(expr, settings=settings)
+
+    stmt = _parse(loop)
+    print()
+    print(pycode(stmt))
+
+    print()
+
 
 
 #==============================================================================
@@ -324,9 +347,10 @@ def teardown_function():
 
 
 #==============================================================================
-#test_nodes_2d_20a()
-##test_nodes_2d_11()
-##test_nodes_2d_5b()
+##test_nodes_2d_20a()
+#test_nodes_2d_20b()
+###test_nodes_2d_11()
+###test_nodes_2d_5b()
 #import sys; sys.exit(0)
 
 

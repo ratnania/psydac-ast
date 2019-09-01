@@ -66,6 +66,16 @@ length_quad    = LengthQuadrature()
 length_dof     = LengthDof()
 
 #==============================================================================
+class RankNode(with_metaclass(Singleton, Basic)):
+    """Base class representing a rank of an iterator"""
+    pass
+
+class RankDimension(RankNode):
+    pass
+
+rank_dim = RankDimension()
+
+#==============================================================================
 class BaseNode(Basic):
     """
     """
@@ -120,7 +130,7 @@ class GeneratorBase(BaseNode):
             dummies = [dummies]
         dummies = Tuple(*dummies)
 
-        if not isinstance(target, ArrayNode):
+        if not isinstance(target, (ArrayNode, MatrixNode)):
             raise TypeError('expecting an ArrayNode')
 
         return Basic.__new__(cls, target, dummies)
@@ -143,6 +153,12 @@ class ProductGenerator(GeneratorBase):
 
 #==============================================================================
 class Grid(BaseNode):
+    """
+    """
+    pass
+
+#==============================================================================
+class ScalarNode(BaseNode):
     """
     """
     pass
@@ -186,10 +202,14 @@ class ArrayNode(BaseNode):
         return Pattern(*args)
 
 #==============================================================================
-class ScalarNode(BaseNode):
+class MatrixNode(BaseNode):
     """
     """
-    pass
+    _rank = None
+
+    @property
+    def rank(self):
+        return self._rank
 
 #==============================================================================
 class GlobalTensorQuadrature(ArrayNode):
@@ -212,6 +232,15 @@ class TensorQuadrature(ScalarNode):
     """
     """
     pass
+
+#==============================================================================
+class MatrixQuadrature(MatrixNode):
+    # TODO add set_positions
+    """
+    """
+    _rank = rank_dim
+    _positions = {index_quad: 0}
+
 
 #==============================================================================
 class GlobalTensorQuadratureBasis(ArrayNode):
@@ -552,7 +581,7 @@ class Loop(BaseNode):
         return self._args[2]
 
 #==============================================================================
-class TensorIterationStatement(BaseNode):
+class TensorIteration(BaseNode):
     """
     """
 
@@ -576,7 +605,7 @@ class TensorIterationStatement(BaseNode):
         return self._args[1]
 
 #==============================================================================
-class ProductIterationStatement(BaseNode):
+class ProductIteration(BaseNode):
     """
     """
 

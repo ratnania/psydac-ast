@@ -38,7 +38,9 @@ from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
 from nodes import Accumulate
-from nodes import TensorIterationStatement
+from nodes import TensorIteration
+from nodes import TensorIterator
+from nodes import TensorGenerator
 
 
 #==============================================================================
@@ -536,7 +538,7 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_TensorIterationStatement(self, expr):
+    def _visit_TensorIteration(self, expr):
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
 
@@ -588,8 +590,13 @@ class Parser(object):
     def _visit_Loop(self, expr):
 #        print('**** Enter Loop ')
         # create iteration statements
-        iterations = [TensorIterationStatement(i,j)
-                      for i,j in zip(expr.iterator, expr.generator)]
+        t_iterator  = [i for i in expr.iterator if isinstance(i, TensorIterator)]
+        t_generator = [i for i in expr.generator if isinstance(i, TensorGenerator)]
+        t_iterations = [TensorIteration(i,j)
+                        for i,j in zip(t_iterator, t_generator)]
+
+        # TODO ARA remove this
+        iterations = t_iterations
 
         iterations = [self._visit(i) for i in iterations]
         indices, lengths, inits = zip(*iterations)
