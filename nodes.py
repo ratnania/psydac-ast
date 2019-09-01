@@ -108,6 +108,10 @@ class TensorIterator(IteratorBase):
     pass
 
 #==============================================================================
+class ProductIterator(IteratorBase):
+    pass
+
+#==============================================================================
 class GeneratorBase(BaseNode):
     """
     """
@@ -131,6 +135,10 @@ class GeneratorBase(BaseNode):
 
 #==============================================================================
 class TensorGenerator(GeneratorBase):
+    pass
+
+#==============================================================================
+class ProductGenerator(GeneratorBase):
     pass
 
 #==============================================================================
@@ -184,7 +192,7 @@ class ScalarNode(BaseNode):
     pass
 
 #==============================================================================
-class GlobalQuadrature(ArrayNode):
+class GlobalTensorQuadrature(ArrayNode):
     """
     """
     _rank = 2
@@ -192,7 +200,7 @@ class GlobalQuadrature(ArrayNode):
     _free_positions = [index_element]
 
 #==============================================================================
-class LocalQuadrature(ArrayNode):
+class LocalTensorQuadrature(ArrayNode):
     # TODO add set_positions
     """
     """
@@ -200,13 +208,13 @@ class LocalQuadrature(ArrayNode):
     _positions = {index_quad: 0}
 
 #==============================================================================
-class Quadrature(ScalarNode):
+class TensorQuadrature(ScalarNode):
     """
     """
     pass
 
 #==============================================================================
-class GlobalBasis(ArrayNode):
+class GlobalTensorQuadratureBasis(ArrayNode):
     """
     """
     _rank = 4
@@ -224,7 +232,7 @@ class GlobalBasis(ArrayNode):
         return self._args[0]
 
 #==============================================================================
-class LocalBasis(ArrayNode):
+class LocalTensorQuadratureBasis(ArrayNode):
     """
     """
     _rank = 3
@@ -242,7 +250,7 @@ class LocalBasis(ArrayNode):
         return self._args[0]
 
 #==============================================================================
-class ArrayBasis(ArrayNode):
+class TensorQuadratureBasis(ArrayNode):
     """
     """
     _rank = 2
@@ -260,7 +268,7 @@ class ArrayBasis(ArrayNode):
         return self._args[0]
 
 #==============================================================================
-class Basis(ScalarNode):
+class TensorBasis(ScalarNode):
     """
     """
     def __new__(cls, target):
@@ -568,11 +576,35 @@ class TensorIterationStatement(BaseNode):
         return self._args[1]
 
 #==============================================================================
+class ProductIterationStatement(BaseNode):
+    """
+    """
+
+    def __new__(cls, iterator, generator):
+        # ...
+        if not( isinstance(iterator, ProductIterator) ):
+            raise TypeError('Expecting an ProductIterator')
+
+        if not( isinstance(generator, ProductGenerator) ):
+            raise TypeError('Expecting a ProductGenerator')
+        # ...
+
+        return Basic.__new__(cls, iterator, generator)
+
+    @property
+    def iterator(self):
+        return self._args[0]
+
+    @property
+    def generator(self):
+        return self._args[1]
+
+#==============================================================================
 def loop_global_quadrature(stmts):
     """
     """
-    g_quad  = GlobalQuadrature()
-    l_quad  = LocalQuadrature()
+    g_quad  = GlobalTensorQuadrature()
+    l_quad  = LocalTensorQuadrature()
 
     iterator  = TensorIterator(l_quad)
     generator = TensorGenerator(g_quad, index_element)
@@ -583,8 +615,8 @@ def loop_global_quadrature(stmts):
 def loop_local_quadrature(stmts):
     """
     """
-    l_quad  = LocalQuadrature()
-    quad    = Quadrature()
+    l_quad  = LocalTensorQuadrature()
+    quad    = TensorQuadrature()
 
     iterator  = TensorIterator(quad)
     generator = TensorGenerator(l_quad, index_quad)
@@ -595,8 +627,8 @@ def loop_local_quadrature(stmts):
 def loop_global_basis(target, stmts):
     """
     """
-    g_basis  = GlobalBasis(target)
-    l_basis  = LocalBasis(target)
+    g_basis  = GlobalTensorQuadratureBasis(target)
+    l_basis  = LocalTensorQuadratureBasis(target)
 
     iterator  = TensorIterator(l_basis)
     # TODO
@@ -608,8 +640,8 @@ def loop_global_basis(target, stmts):
 def loop_local_basis(target, stmts):
     """
     """
-    l_basis  = LocalBasis(target)
-    a_basis    = ArrayBasis(target)
+    l_basis  = LocalTensorQuadratureBasis(target)
+    a_basis    = TensorQuadratureBasis(target)
 
     iterator  = TensorIterator(a_basis)
     generator = TensorGenerator(l_basis, index_dof)
@@ -620,8 +652,8 @@ def loop_local_basis(target, stmts):
 def loop_array_basis(target, stmts):
     """
     """
-    a_basis  = ArrayBasis(target)
-    basis    = Basis(target)
+    a_basis  = TensorQuadratureBasis(target)
+    basis    = TensorBasis(target)
 
     iterator  = TensorIterator(basis)
     generator = TensorGenerator(a_basis, index_quad)

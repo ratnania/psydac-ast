@@ -19,13 +19,13 @@ from nodes import Element
 from nodes import TensorIterator
 from nodes import TensorGenerator
 from nodes import Loop
-from nodes import GlobalQuadrature
-from nodes import LocalQuadrature
-from nodes import Quadrature
-from nodes import GlobalBasis
-from nodes import LocalBasis
-from nodes import ArrayBasis
-from nodes import Basis
+from nodes import GlobalTensorQuadrature
+from nodes import LocalTensorQuadrature
+from nodes import TensorQuadrature
+from nodes import GlobalTensorQuadratureBasis
+from nodes import LocalTensorQuadratureBasis
+from nodes import TensorQuadratureBasis
+from nodes import TensorBasis
 from nodes import GlobalSpan
 from nodes import Span
 from nodes import BasisAtom
@@ -64,13 +64,13 @@ expr   = dot(grad(v), grad(u))
 # ...
 grid    = Grid()
 element = Element()
-g_quad  = GlobalQuadrature()
-l_quad  = LocalQuadrature()
-quad    = Quadrature()
-g_basis = GlobalBasis(u)
-l_basis = LocalBasis(u)
-a_basis = ArrayBasis(u)
-basis   = Basis(u)
+g_quad  = GlobalTensorQuadrature()
+l_quad  = LocalTensorQuadrature()
+quad    = TensorQuadrature()
+g_basis = GlobalTensorQuadratureBasis(u)
+l_basis = LocalTensorQuadratureBasis(u)
+a_basis = TensorQuadratureBasis(u)
+basis   = TensorBasis(u)
 g_span  = GlobalSpan(u)
 span    = Span(u)
 # ...
@@ -326,7 +326,7 @@ def teardown_function():
 #==============================================================================
 #test_nodes_2d_20a()
 ##test_nodes_2d_11()
-###test_nodes_2d_5b()
+##test_nodes_2d_5b()
 #import sys; sys.exit(0)
 
 

@@ -26,12 +26,12 @@ from nodes import AtomicNode
 from nodes import BasisAtom
 from nodes import PhysicalBasisValue
 from nodes import LogicalBasisValue
-from nodes import Quadrature
-from nodes import Basis
-from nodes import GlobalQuadrature
-from nodes import LocalQuadrature
-from nodes import LocalBasis
-from nodes import ArrayBasis
+from nodes import TensorQuadrature
+from nodes import TensorBasis
+from nodes import GlobalTensorQuadrature
+from nodes import LocalTensorQuadrature
+from nodes import LocalTensorQuadratureBasis
+from nodes import TensorQuadratureBasis
 from nodes import index_quad, length_quad
 from nodes import index_dof, length_dof
 from nodes import index_element, length_element
@@ -180,7 +180,7 @@ class Parser(object):
         raise NotImplementedError('TODO')
 
     # ....................................................
-    def _visit_GlobalQuadrature(self, expr):
+    def _visit_GlobalTensorQuadrature(self, expr):
         dim  = self.dim
         rank = expr.rank
 
@@ -196,7 +196,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_LocalQuadrature(self, expr):
+    def _visit_LocalTensorQuadrature(self, expr):
         dim  = self.dim
         rank = expr.rank
 
@@ -212,7 +212,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_Quadrature(self, expr):
+    def _visit_TensorQuadrature(self, expr):
         dim = self.dim
 
         names   = 'x1:%s'%(dim+1)
@@ -225,7 +225,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_GlobalBasis(self, expr):
+    def _visit_GlobalTensorQuadratureBasis(self, expr):
         # TODO add label
         # TODO add ln
         dim = self.dim
@@ -243,7 +243,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_LocalBasis(self, expr):
+    def _visit_LocalTensorQuadratureBasis(self, expr):
         # TODO add label
         # TODO add ln
         dim = self.dim
@@ -261,7 +261,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_ArrayBasis(self, expr):
+    def _visit_TensorQuadratureBasis(self, expr):
         # TODO add label
         # TODO add ln
         dim = self.dim
@@ -279,7 +279,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_Basis(self, expr):
+    def _visit_TensorBasis(self, expr):
         # TODO label
         dim = self.dim
         nderiv = self.nderiv
@@ -508,7 +508,7 @@ class Parser(object):
         if expr.dummies is None:
             return target
 
-#        if isinstance(expr.target, GlobalQuadrature):
+#        if isinstance(expr.target, GlobalTensorQuadrature):
 #            print('> target = ', target)
 #            print('> dummies = ', expr.dummies)
 #            for i in expr.dummies:
@@ -558,7 +558,7 @@ class Parser(object):
             # TODO maybe we should add a flag here or a kwarg that says we
             # should enumerate the array
             if len(l_xs) > len(g_xs):
-                assert(isinstance(expr.generator.target, (LocalBasis, ArrayBasis)))
+                assert(isinstance(expr.generator.target, (LocalTensorQuadratureBasis, TensorQuadratureBasis)))
 
                 positions = [expr.generator.target.positions[i] for i in [index_deriv]]
                 args = []
@@ -573,7 +573,7 @@ class Parser(object):
                 if isinstance(l_x, IndexedVariable):
                     lhs = l_x
 
-                elif isinstance(expr.generator.target, (LocalBasis, ArrayBasis)):
+                elif isinstance(expr.generator.target, (LocalTensorQuadratureBasis, TensorQuadratureBasis)):
                     lhs = self._visit(BasisAtom(l_x))
                 else:
                     lhs = l_x
