@@ -30,6 +30,7 @@ from nodes import Basis
 from nodes import GlobalQuadrature
 from nodes import LocalQuadrature
 from nodes import LocalBasis
+from nodes import ArrayBasis
 from nodes import index_point, length_point
 from nodes import index_dof, length_dof
 from nodes import index_element, length_element
@@ -223,6 +224,24 @@ class Parser(object):
             names = 'local_basis_1:%s(1:%s)'%(dim+1,ln+1)
         else:
             names = 'local_basis_1:%s'%(dim+1)
+
+        target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
+        if not isinstance(target[0], (tuple, list, Tuple)):
+            target = [target]
+        target = list(zip(*target))
+        return target
+
+    # ....................................................
+    def _visit_ArrayBasis(self, expr):
+        # TODO add label
+        # TODO add ln
+        dim = self.dim
+        rank = expr.rank
+        ln = 1
+        if ln > 1:
+            names = 'array_basis_1:%s(1:%s)'%(dim+1,ln+1)
+        else:
+            names = 'array_basis_1:%s'%(dim+1)
 
         target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
         if not isinstance(target[0], (tuple, list, Tuple)):
@@ -487,7 +506,7 @@ class Parser(object):
             # TODO maybe we should add a flag here or a kwarg that says we
             # should enumerate the array
             if len(l_xs) > len(g_xs):
-                assert(isinstance(expr.generator.target, LocalBasis))
+                assert(isinstance(expr.generator.target, (LocalBasis, ArrayBasis)))
 
                 positions = [expr.generator.target.positions[i] for i in [index_deriv]]
                 args = []
@@ -498,7 +517,11 @@ class Parser(object):
                 g_xs = args
 
             for l_x,g_x in zip(l_xs, g_xs):
-                if isinstance(expr.generator.target, LocalBasis):
+                # TODO improve
+                if isinstance(l_x, IndexedVariable):
+                    lhs = l_x
+
+                elif isinstance(expr.generator.target, (LocalBasis, ArrayBasis)):
                     lhs = self._visit(BasisAtom(l_x))
                 else:
                     lhs = l_x

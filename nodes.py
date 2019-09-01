@@ -220,7 +220,25 @@ class LocalBasis(ArrayNode):
     """
     _rank = 3
     _positions = {index_point: 2, index_deriv: 1, index_dof: 0}
-    _free_positions = [index_point, index_dof]
+    _free_positions = [index_dof]
+
+    def __new__(cls, target):
+        if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
+            raise TypeError('Expecting a scalar/vector test function')
+
+        return Basic.__new__(cls, target)
+
+    @property
+    def target(self):
+        return self._args[0]
+
+#==============================================================================
+class ArrayBasis(ArrayNode):
+    """
+    """
+    _rank = 2
+    _positions = {index_point: 1, index_deriv: 0}
+    _free_positions = [index_point]
 
     def __new__(cls, target):
         if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
@@ -356,16 +374,14 @@ class BasisAtom(AtomicNode):
     """
     """
     def __new__(cls, expr):
-        # ...
         ls  = list(expr.atoms(ScalarTestFunction))
         ls += list(expr.atoms(VectorTestFunction))
         if not(len(ls) == 1):
-            print(expr)
+            print(expr, type(expr))
             print(ls)
             raise ValueError('Expecting an expression with one test function')
 
         u = ls[0]
-        # ...
 
         obj = Basic.__new__(cls, expr)
         obj._atom = u
@@ -511,12 +527,12 @@ def loop_local_quadrature(stmts):
 def loop_global_basis(target, stmts):
     """
     """
-    g_quad  = GlobalBasis(target)
-    l_quad  = LocalBasis(target)
+    g_basis  = GlobalBasis(target)
+    l_basis  = LocalBasis(target)
 
-    iterator  = Iterator(l_quad)
+    iterator  = Iterator(l_basis)
     # TODO
-    generator = Generator(g_quad, index_element)
+    generator = Generator(g_basis, index_element)
 
     return Loop(iterator, generator, stmts)
 
@@ -524,11 +540,23 @@ def loop_global_basis(target, stmts):
 def loop_local_basis(target, stmts):
     """
     """
-    l_quad  = LocalBasis(target)
-    quad    = Basis(target)
+    l_basis  = LocalBasis(target)
+    a_basis    = ArrayBasis(target)
 
-    iterator  = Iterator(quad)
-    generator = Generator(l_quad, index_dof)
+    iterator  = Iterator(a_basis)
+    generator = Generator(l_basis, index_dof)
+
+    return Loop(iterator, generator, stmts)
+
+#==============================================================================
+def loop_array_basis(target, stmts):
+    """
+    """
+    a_basis  = ArrayBasis(target)
+    basis    = Basis(target)
+
+    iterator  = Iterator(basis)
+    generator = Generator(a_basis, index_point)
 
     return Loop(iterator, generator, stmts)
 

@@ -23,6 +23,7 @@ from nodes import LocalQuadrature
 from nodes import Quadrature
 from nodes import GlobalBasis
 from nodes import LocalBasis
+from nodes import ArrayBasis
 from nodes import Basis
 from nodes import GlobalSpan
 from nodes import Span
@@ -34,6 +35,7 @@ from nodes import index_point
 from nodes import index_dof
 from nodes import loop_local_quadrature
 from nodes import loop_global_quadrature
+from nodes import loop_array_basis
 from nodes import loop_local_basis
 from nodes import loop_global_basis
 from nodes import loop_global_span
@@ -59,6 +61,7 @@ l_quad  = LocalQuadrature()
 quad    = Quadrature()
 g_basis = GlobalBasis(u)
 l_basis = LocalBasis(u)
+a_basis = ArrayBasis(u)
 basis   = Basis(u)
 g_span  = GlobalSpan(u)
 span    = Span(u)
@@ -137,10 +140,24 @@ def test_nodes_2d_4():
     print()
 
 #==============================================================================
-def test_nodes_2d_5():
+# TODO to remove: we should not allow such tree
+#def test_nodes_2d_5a():
+#    loop = loop_local_quadrature([])
+#    loop = loop_array_basis(u, [loop])
+#    # TODO bug when nderiv=0
+#    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 1})
+#    print()
+#    print(pycode(stmt))
+#    print()
+
+#==============================================================================
+def test_nodes_2d_5b():
     loop = loop_local_quadrature([])
+    loop = loop_array_basis(u, [loop])
     loop = loop_local_basis(u, [loop])
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
+
+    # TODO bug when nderiv=0
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 1})
     print()
     print(pycode(stmt))
     print()
@@ -243,6 +260,7 @@ def test_nodes_2d_11():
     body  += [ComputePhysical(i) for i in expressions]
 
     loop = loop_local_quadrature(body)
+    loop = loop_array_basis(u, [loop])
     loop = loop_local_basis(u, [loop])
     # ...
 
@@ -276,8 +294,9 @@ def teardown_function():
 
 
 #==============================================================================
-test_nodes_2d_11()
-import sys; sys.exit(0)
+#test_nodes_2d_11()
+##test_nodes_2d_5b()
+#import sys; sys.exit(0)
 
 
 
@@ -285,7 +304,7 @@ import sys; sys.exit(0)
 test_nodes_2d_1()
 test_nodes_2d_2()
 test_nodes_2d_4()
-test_nodes_2d_5()
+test_nodes_2d_5b()
 test_nodes_2d_6a()
 test_nodes_2d_6b()
 test_nodes_2d_6c()
