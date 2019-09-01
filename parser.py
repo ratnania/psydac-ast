@@ -387,14 +387,6 @@ class Parser(object):
         return self._visit(Assign(lhs, rhs))
 
     # ....................................................
-    def _visit_FieldEvaluation(self, expr):
-        raise NotImplementedError('TODO')
-
-    # ....................................................
-    def _visit_MappingEvaluation(self, expr):
-        raise NotImplementedError('TODO')
-
-    # ....................................................
     def _visit_AtomicNode(self, expr):
         symbol = SymbolicExpr(expr.expr)
         return symbol
@@ -426,7 +418,15 @@ class Parser(object):
         return SymbolicExpr(expr)
 
     # ....................................................
-    def _visit_PhysicalBasisValue(self, expr):
+    def _visit_PhysicalValueNode(self, expr):
+        mapping = self.mapping
+        expr = LogicalExpr(mapping, expr.expr)
+
+        return SymbolicExpr(expr)
+
+    # ....................................................
+    def _visit_PhysicalGeometryValue(self, expr):
+        print('PAR ICI')
         mapping = self.mapping
         expr = LogicalExpr(mapping, expr.expr)
 

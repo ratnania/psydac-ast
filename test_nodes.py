@@ -12,6 +12,7 @@ from sympde.topology import (dx1, dx2, dx3)
 from sympde.topology import ScalarFunctionSpace
 from sympde.topology import element_of, elements_of
 from sympde.topology import Square
+from sympde.topology import Mapping
 
 from nodes import Grid
 from nodes import Element
@@ -45,11 +46,16 @@ from nodes import ComputePhysicalBasis
 from nodes import ComputeLogicalBasis
 #from nodes import Accumulate # TODO fix
 from nodes import construct_logical_expressions
+from nodes import GeometryAtom
+from nodes import PhysicalGeometryValue
+from nodes import LogicalGeometryValue
 
 from parser import parse
 
 # ... abstract model
 domain = Square()
+M      = Mapping('M', domain.dim)
+
 V      = ScalarFunctionSpace('V', domain)
 u,v    = elements_of(V, names='u,v')
 expr   = dot(grad(v), grad(u))
@@ -283,6 +289,28 @@ def test_nodes_2d_11():
 
 
 #==============================================================================
+def test_nodes_2d_20a():
+    expr = M[0]
+    lhs  = GeometryAtom(expr)
+    rhs  = PhysicalGeometryValue(expr)
+
+    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
+    _parse = lambda expr: parse(expr, settings=settings)
+
+    u_xy   = Symbol('u_xy')
+    u_x1x2 = Symbol('u_x1x2')
+
+#    assert(lhs.atom == u)
+#    assert(_parse(lhs) == u_xy)
+#    assert(_parse(rhs) == u_x1x2)
+
+    print(_parse(lhs))
+    print(_parse(rhs))
+    print()
+
+
+
+#==============================================================================
 # CLEAN UP SYMPY NAMESPACE
 #==============================================================================
 
@@ -296,9 +324,10 @@ def teardown_function():
 
 
 #==============================================================================
+test_nodes_2d_20a()
 #test_nodes_2d_11()
 ##test_nodes_2d_5b()
-#import sys; sys.exit(0)
+import sys; sys.exit(0)
 
 
 

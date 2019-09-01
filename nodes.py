@@ -8,6 +8,7 @@ from sympy.core.containers import Tuple
 
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.topology import (dx1, dx2, dx3)
+from sympde.topology import Mapping
 
 
 #==============================================================================
@@ -412,6 +413,18 @@ class LogicalBasisValue(LogicalValueNode):
     pass
 
 #==============================================================================
+class PhysicalGeometryValue(PhysicalValueNode):
+    """
+    """
+    pass
+
+#==============================================================================
+class LogicalGeometryValue(LogicalValueNode):
+    """
+    """
+    pass
+
+#==============================================================================
 class BasisAtom(AtomicNode):
     """
     """
@@ -436,6 +449,33 @@ class BasisAtom(AtomicNode):
     @property
     def atom(self):
         return self._atom
+
+#==============================================================================
+class GeometryAtom(AtomicNode):
+    """
+    """
+    def __new__(cls, expr):
+        ls = list(expr.atoms(Mapping))
+        if not(len(ls) == 1):
+            print(expr, type(expr))
+            print(ls)
+            raise ValueError('Expecting an expression with one mapping')
+
+        # TODO
+        u = ls[0]
+
+        obj = Basic.__new__(cls, expr)
+        obj._atom = u
+        return obj
+
+    @property
+    def expr(self):
+        return self._args[0]
+
+    @property
+    def atom(self):
+        return self._atom
+
 
 #==============================================================================
 class Loop(BaseNode):
