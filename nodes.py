@@ -122,6 +122,7 @@ class ProductIterator(IteratorBase):
     pass
 
 #==============================================================================
+# TODO dummies should not be None
 class GeneratorBase(BaseNode):
     """
     """
@@ -211,6 +212,9 @@ class MatrixNode(BaseNode):
     def rank(self):
         return self._rank
 
+    def pattern(self, positions):
+        raise NotImplementedError('TODO')
+
 #==============================================================================
 class GlobalTensorQuadrature(ArrayNode):
     """
@@ -235,11 +239,17 @@ class TensorQuadrature(ScalarNode):
 
 #==============================================================================
 class MatrixQuadrature(MatrixNode):
-    # TODO add set_positions
     """
     """
     _rank = rank_dim
-    _positions = {index_quad: 0}
+
+    def __new__(cls, target):
+        # TODO check target
+        return Basic.__new__(cls, target)
+
+    @property
+    def target(self):
+        return self._args[0]
 
 
 #==============================================================================
@@ -749,3 +759,31 @@ def construct_logical_expressions(u, nderiv):
         args.append(atom)
 
     return [ComputeLogicalBasis(i) for i in args]
+
+#==============================================================================
+def construct_geometry_iter_gener(M, nderiv):
+    dim = M.rdim
+
+    ops = [dx1, dx2, dx3][:dim]
+    r = range(nderiv+1)
+    ranges = [r]*dim
+    indices = product(*ranges)
+
+    indices = list(indices)
+    indices = [ijk for ijk in indices if sum(ijk) <= nderiv]
+
+    args = []
+    for d in range(dim):
+        for ijk in indices:
+            atom = M[d]
+            for n,op in zip(ijk, ops):
+                for i in range(1, n+1):
+                    atom = op(atom)
+            args.append(atom)
+
+    iterators   = [ProductIterator(GeometryAtom(i))
+                   for i in args]
+    generators  = [ProductGenerator(MatrixQuadrature(i), index_quad)
+                       for i in args]
+
+    return iterators, generators

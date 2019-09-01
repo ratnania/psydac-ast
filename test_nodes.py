@@ -52,6 +52,7 @@ from nodes import construct_logical_expressions
 from nodes import GeometryAtom
 from nodes import PhysicalGeometryValue
 from nodes import LogicalGeometryValue
+from nodes import construct_geometry_iter_gener
 
 from parser import parse
 
@@ -300,25 +301,20 @@ def test_nodes_2d_20a():
     settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
     _parse = lambda expr: parse(expr, settings=settings)
 
-    u_xy   = Symbol('u_xy')
-    u_x1x2 = Symbol('u_x1x2')
+    x = Symbol('x')
 
-#    assert(lhs.atom == u)
-#    assert(_parse(lhs) == u_xy)
-#    assert(_parse(rhs) == u_x1x2)
+    assert(_parse(lhs) == x)
+    # TODO add assert on parse rhs
 
-    print(_parse(lhs))
-    print(_parse(rhs))
     print()
 
 #==============================================================================
 def test_nodes_2d_20b():
     stmts = []
 
-    iterator  = (TensorIterator(quad),
-                 ProductIterator(GeometryAtom(M[0])))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 ProductGenerator(MatrixQuadrature(M[0]), index_quad))
+    geo_iterators, geo_generators = construct_geometry_iter_gener(M, nderiv=1)
+    iterator  = [TensorIterator(quad)] + geo_iterators
+    generator = [TensorGenerator(l_quad, index_quad)] + geo_generators
 
     loop = Loop(iterator, generator, stmts)
 
@@ -347,13 +343,8 @@ def teardown_function():
 
 
 #==============================================================================
-##test_nodes_2d_20a()
 #test_nodes_2d_20b()
-###test_nodes_2d_11()
-###test_nodes_2d_5b()
 #import sys; sys.exit(0)
-
-
 
 # tests without assert
 test_nodes_2d_1()
@@ -368,7 +359,9 @@ test_nodes_2d_8()
 test_nodes_2d_9()
 test_nodes_2d_10()
 test_nodes_2d_11()
+test_nodes_2d_20b()
 
 # tests with assert
 test_nodes_2d_3a()
 test_nodes_2d_3b()
+test_nodes_2d_20a()

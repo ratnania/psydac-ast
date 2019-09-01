@@ -41,6 +41,9 @@ from nodes import Accumulate
 from nodes import TensorIteration
 from nodes import TensorIterator
 from nodes import TensorGenerator
+from nodes import ProductIteration
+from nodes import ProductIterator
+from nodes import ProductGenerator
 
 
 #==============================================================================
@@ -225,6 +228,15 @@ class Parser(object):
 
         target = list(zip(points, weights))
         return target
+
+    # ....................................................
+    def _visit_MatrixQuadrature(self, expr):
+        dim = self.dim
+        rank   = self._visit(expr.rank)
+        target = SymbolicExpr(expr.target)
+
+        name = 'arr_{}'.format(target.name)
+        return IndexedVariable(name, dtype='real', rank=rank)
 
     # ....................................................
     def _visit_GlobalTensorQuadratureBasis(self, expr):
@@ -492,15 +504,20 @@ class Parser(object):
         return symbols('p1:%d'%(dim+1))
 
     # ....................................................
+    def _visit_RankDimension(self, expr):
+        return self.dim
+
+    # ....................................................
     def _visit_TensorIterator(self, expr):
         dim  = self.dim
         target = self._visit(expr.target)
+        return target
 
-        if expr.dummies is None:
-            return target
-
-        else:
-            raise NotImplementedError('TODO')
+    # ....................................................
+    def _visit_ProductIterator(self, expr):
+        dim  = self.dim
+        target = self._visit(expr.target)
+        return target
 
     # ....................................................
     def _visit_TensorGenerator(self, expr):
@@ -509,15 +526,6 @@ class Parser(object):
 
         if expr.dummies is None:
             return target
-
-#        if isinstance(expr.target, GlobalTensorQuadrature):
-#            print('> target = ', target)
-#            print('> dummies = ', expr.dummies)
-#            for i in expr.dummies:
-#                print(i, type(i))
-#                a = self._visit(i)
-#                print(i, '     ' , a)
-#            import sys; sys.exit(0)
 
         # treat dummies and put them in the namespace
         dummies = self._visit(expr.dummies)
@@ -536,6 +544,17 @@ class Parser(object):
             args.append(ls)
 
         return args
+
+    # ....................................................
+    def _visit_ProductGenerator(self, expr):
+        dim    = self.dim
+        target = self._visit(expr.target)
+
+        # treat dummies and put them in the namespace
+        dummies = self._visit(expr.dummies)
+        dummies = dummies[0] # TODO add comment
+
+        return target[dummies]
 
     # ....................................................
     def _visit_TensorIteration(self, expr):
@@ -587,44 +606,66 @@ class Parser(object):
         return  indices, lengths, inits
 
     # ....................................................
+    def _visit_ProductIteration(self, expr):
+        # TODO for the moment, we do not return indices and lengths
+        iterator  = self._visit(expr.iterator)
+        generator = self._visit(expr.generator)
+
+        return Assign(iterator, generator)
+
+    # ....................................................
     def _visit_Loop(self, expr):
-#        print('**** Enter Loop ')
-        # create iteration statements
-        t_iterator  = [i for i in expr.iterator if isinstance(i, TensorIterator)]
-        t_generator = [i for i in expr.generator if isinstance(i, TensorGenerator)]
+        # we first create iteration statements
+        # these iterations are splitted between what is tensor or not
+
+        # ... treate tensor iterations
+        t_iterator   = [i for i in expr.iterator  if isinstance(i, TensorIterator)]
+        t_generator  = [i for i in expr.generator if isinstance(i, TensorGenerator)]
         t_iterations = [TensorIteration(i,j)
                         for i,j in zip(t_iterator, t_generator)]
 
-        # TODO ARA remove this
-        iterations = t_iterations
+        t_inits = []
+        if t_iterations:
+            t_iterations = [self._visit(i) for i in t_iterations]
+            indices, lengths, inits = zip(*t_iterations)
+            # indices and lengths are suppose to be repeated here
+            # we only take the first occurence
+            indices = indices[0]
+            lengths = lengths[0]
 
-        iterations = [self._visit(i) for i in iterations]
-        indices, lengths, inits = zip(*iterations)
-        # indices and lengths are suppose to be repeated here
-        # we only take the first occurence
-        indices = indices[0]
-        lengths = lengths[0]
+            inits_0 = inits[0]
+            dim = self.dim
+            for init in inits[1:]:
+                for i in range(dim):
+                    inits_0[i] += init[i]
 
-        inits_0 = inits[0]
-        dim = self.dim
-        for init in inits[1:]:
-            for i in range(dim):
-                inits_0[i] += init[i]
+            t_inits = inits_0
+        # ...
 
-        inits = inits_0
+        # ... treate product iterations
+        p_iterator   = [i for i in expr.iterator  if isinstance(i, ProductIterator)]
+        p_generator  = [i for i in expr.generator if isinstance(i, ProductGenerator)]
+        p_iterations = [ProductIteration(i,j)
+                        for i,j in zip(p_iterator, p_generator)]
 
-#        print('> indices = ', indices)
-#        print('> lengths = ', lengths)
-#        print('> inits   = ', inits  )
-#        import sys; sys.exit(0)
+        p_inits = []
+        if p_iterations:
+            p_inits = [self._visit(i) for i in p_iterations]
+        # ...
 
         # check if there is an accumulation
         # TODO init accumulation vars
 #        accumulations = expr.stmts.atoms(Accumulate)
 
+        inits = t_inits
+
         # ...
+        # visit loop statements
         stmts = self._visit(expr.stmts)
-        body  = list(stmts)
+
+        # update with product statements if available
+        body = list(p_inits) + list(stmts)
+
         for index, length, init in zip(indices, lengths, inits):
             if len(length) == 1:
                 l = length[0]
@@ -642,7 +683,6 @@ class Parser(object):
         # remove the list and return the For Node only
         body = body[0]
 
-#        print('**** End   Loop ')
         return body
 
     # ....................................................
