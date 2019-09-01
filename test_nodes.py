@@ -39,8 +39,10 @@ from nodes import loop_array_basis
 from nodes import loop_local_basis
 from nodes import loop_global_basis
 from nodes import loop_global_span
-from nodes import ComputePhysical
-from nodes import ComputeLogical
+#from nodes import ComputePhysical
+#from nodes import ComputeLogical
+from nodes import ComputePhysicalBasis
+from nodes import ComputeLogicalBasis
 #from nodes import Accumulate # TODO fix
 from nodes import construct_logical_expressions
 
@@ -165,7 +167,7 @@ def test_nodes_2d_5b():
 #==============================================================================
 def test_nodes_2d_6a():
     body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
-    body  = [ComputePhysical(i) for i in body]
+    body  = [ComputePhysicalBasis(i) for i in body]
 #    body += [Accumulate('+', dy(u)*dx(u))]
     loop = loop_local_quadrature(body)
     loop = loop_local_basis(u, [loop])
@@ -177,7 +179,7 @@ def test_nodes_2d_6a():
 #==============================================================================
 def test_nodes_2d_6b():
     body  = [dx1(u)]
-    body  = [ComputeLogical(i) for i in body]
+    body  = [ComputeLogicalBasis(i) for i in body]
     loop = loop_local_quadrature(body)
     loop = loop_local_basis(u, [loop])
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
@@ -190,10 +192,10 @@ def test_nodes_2d_6c():
     body = []
 
     expressions  = [dx1(u), dx2(u)]
-    body += [ComputeLogical(i) for i in expressions]
+    body += [ComputeLogicalBasis(i) for i in expressions]
 
     expressions  = [dx(u)]
-    body += [ComputePhysical(i) for i in expressions]
+    body += [ComputePhysicalBasis(i) for i in expressions]
 
     loop = loop_local_quadrature(body)
     loop = loop_local_basis(u, [loop])
@@ -257,7 +259,7 @@ def test_nodes_2d_11():
     body = construct_logical_expressions(u, nderiv)
 
     expressions = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
-    body  += [ComputePhysical(i) for i in expressions]
+    body  += [ComputePhysicalBasis(i) for i in expressions]
 
     loop = loop_local_quadrature(body)
     loop = loop_array_basis(u, [loop])

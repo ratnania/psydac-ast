@@ -22,6 +22,7 @@ from sympde.topology import element_of
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.expr.evaluation import _split_test_function
 
+from nodes import AtomicNode
 from nodes import BasisAtom
 from nodes import PhysicalBasisValue
 from nodes import LogicalBasisValue
@@ -341,6 +342,30 @@ class Parser(object):
     def _visit_ComputeLogical(self, expr):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
+            lhs = self._visit(AtomicNode(expr))
+        else:
+            lhs = random_string( 6 )
+            lhs = Symbol('tmp_{}'.format(lhs))
+
+        rhs = self._visit(LogicalValueNode(expr))
+        return self._visit(Assign(lhs, rhs))
+
+    # ....................................................
+    def _visit_ComputePhysical(self, expr):
+        expr = expr.expr
+        if not isinstance(expr, (Add, Mul)):
+            lhs = self._visit(AtomicNode(expr))
+        else:
+            lhs = random_string( 6 )
+            lhs = Symbol('tmp_{}'.format(lhs))
+
+        rhs = self._visit(PhysicalValueNode(expr))
+        return self._visit(Assign(lhs, rhs))
+
+    # ....................................................
+    def _visit_ComputeLogicalBasis(self, expr):
+        expr = expr.expr
+        if not isinstance(expr, (Add, Mul)):
             lhs = self._visit(BasisAtom(expr))
         else:
             lhs = random_string( 6 )
@@ -350,7 +375,7 @@ class Parser(object):
         return self._visit(Assign(lhs, rhs))
 
     # ....................................................
-    def _visit_ComputePhysical(self, expr):
+    def _visit_ComputePhysicalBasis(self, expr):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
             lhs = self._visit(BasisAtom(expr))
@@ -370,7 +395,7 @@ class Parser(object):
         raise NotImplementedError('TODO')
 
     # ....................................................
-    def _visit_BasisAtom(self, expr):
+    def _visit_AtomicNode(self, expr):
         symbol = SymbolicExpr(expr.expr)
         return symbol
 

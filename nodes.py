@@ -314,7 +314,7 @@ class MappingEvaluation(Evaluation):
     pass
 
 #==============================================================================
-class ComputePhysical(Basic):
+class ComputeNode(Basic):
     """
     """
     def __new__(cls, expr):
@@ -325,15 +325,28 @@ class ComputePhysical(Basic):
         return self._args[0]
 
 #==============================================================================
-class ComputeLogical(Basic):
+class ComputePhysical(ComputeNode):
     """
     """
-    def __new__(cls, expr):
-        return Basic.__new__(cls, expr)
+    pass
 
-    @property
-    def expr(self):
-        return self._args[0]
+#==============================================================================
+class ComputePhysicalBasis(ComputePhysical):
+    """
+    """
+    pass
+
+#==============================================================================
+class ComputeLogical(ComputeNode):
+    """
+    """
+    pass
+
+#==============================================================================
+class ComputeLogicalBasis(ComputeLogical):
+    """
+    """
+    pass
 
 #==============================================================================
 class Accumulate(Basic):
@@ -367,6 +380,35 @@ class AtomicNode(ExprNode):
 class ValueNode(ExprNode):
     """
     """
+    def __new__(cls, expr):
+        return Basic.__new__(cls, expr)
+
+    @property
+    def expr(self):
+        return self._args[0]
+
+#==============================================================================
+class PhysicalValueNode(ValueNode):
+    """
+    """
+    pass
+
+#==============================================================================
+class LogicalValueNode(ValueNode):
+    """
+    """
+    pass
+
+#==============================================================================
+class PhysicalBasisValue(PhysicalValueNode):
+    """
+    """
+    pass
+
+#==============================================================================
+class LogicalBasisValue(LogicalValueNode):
+    """
+    """
     pass
 
 #==============================================================================
@@ -394,28 +436,6 @@ class BasisAtom(AtomicNode):
     @property
     def atom(self):
         return self._atom
-
-#==============================================================================
-class PhysicalBasisValue(ValueNode):
-    """
-    """
-    def __new__(cls, expr):
-        return Basic.__new__(cls, expr)
-
-    @property
-    def expr(self):
-        return self._args[0]
-
-#==============================================================================
-class LogicalBasisValue(ValueNode):
-    """
-    """
-    def __new__(cls, expr):
-        return Basic.__new__(cls, expr)
-
-    @property
-    def expr(self):
-        return self._args[0]
 
 #==============================================================================
 class Loop(BaseNode):
@@ -619,6 +639,6 @@ def construct_logical_expressions(u, nderiv):
                 atom = op(atom)
         args.append(atom)
 
-    return [ComputeLogical(i) for i in args]
+    return [ComputeLogicalBasis(i) for i in args]
 
 
