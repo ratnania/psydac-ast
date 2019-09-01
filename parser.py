@@ -32,7 +32,7 @@ from nodes import GlobalQuadrature
 from nodes import LocalQuadrature
 from nodes import LocalBasis
 from nodes import ArrayBasis
-from nodes import index_point, length_point
+from nodes import index_quad, length_quad
 from nodes import index_dof, length_dof
 from nodes import index_element, length_element
 from nodes import index_deriv
@@ -51,7 +51,7 @@ def random_string( n ):
     return ''.join( selector.choice( chars ) for _ in range( n ) )
 
 #==============================================================================
-_length_of_registery = {index_point:   length_point,
+_length_of_registery = {index_quad:    length_quad,
                         index_dof:     length_dof,
                         index_element: length_element, }
 
@@ -460,7 +460,7 @@ class Parser(object):
         return symbols('i_element_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_IndexPoint(self, expr):
+    def _visit_IndexQuadrature(self, expr):
         dim = self.dim
         return symbols('i_quad_1:%d'%(dim+1))
 
@@ -479,7 +479,7 @@ class Parser(object):
         return symbols('n_element_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_LengthPoint(self, expr):
+    def _visit_LengthQuadrature(self, expr):
         dim = self.dim
         return symbols('k1:%d'%(dim+1))
 

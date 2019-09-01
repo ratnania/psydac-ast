@@ -33,7 +33,7 @@ class IndexNode(with_metaclass(Singleton, Basic)):
 class IndexElement(IndexNode):
     pass
 
-class IndexPoint(IndexNode):
+class IndexQuadrature(IndexNode):
     pass
 
 class IndexDof(IndexNode):
@@ -43,7 +43,7 @@ class IndexDerivative(IndexNode):
     pass
 
 index_element = IndexElement()
-index_point   = IndexPoint()
+index_quad    = IndexQuadrature()
 index_dof     = IndexDof()
 index_deriv   = IndexDerivative()
 
@@ -55,14 +55,14 @@ class LengthNode(with_metaclass(Singleton, Basic)):
 class LengthElement(LengthNode):
     pass
 
-class LengthPoint(LengthNode):
+class LengthQuadrature(LengthNode):
     pass
 
 class LengthDof(LengthNode):
     pass
 
 length_element = LengthElement()
-length_point   = LengthPoint()
+length_quad    = LengthQuadrature()
 length_dof     = LengthDof()
 
 #==============================================================================
@@ -180,7 +180,7 @@ class GlobalQuadrature(ArrayNode):
     """
     """
     _rank = 2
-    _positions = {index_element: 0, index_point: 1}
+    _positions = {index_element: 0, index_quad: 1}
     _free_positions = [index_element]
 
 #==============================================================================
@@ -189,7 +189,7 @@ class LocalQuadrature(ArrayNode):
     """
     """
     _rank = 1
-    _positions = {index_point: 0}
+    _positions = {index_quad: 0}
 
 #==============================================================================
 class Quadrature(ScalarNode):
@@ -202,7 +202,7 @@ class GlobalBasis(ArrayNode):
     """
     """
     _rank = 4
-    _positions = {index_point: 3, index_deriv: 2, index_dof: 1, index_element: 0}
+    _positions = {index_quad: 3, index_deriv: 2, index_dof: 1, index_element: 0}
     _free_positions = [index_element]
 
     def __new__(cls, target):
@@ -220,7 +220,7 @@ class LocalBasis(ArrayNode):
     """
     """
     _rank = 3
-    _positions = {index_point: 2, index_deriv: 1, index_dof: 0}
+    _positions = {index_quad: 2, index_deriv: 1, index_dof: 0}
     _free_positions = [index_dof]
 
     def __new__(cls, target):
@@ -238,8 +238,8 @@ class ArrayBasis(ArrayNode):
     """
     """
     _rank = 2
-    _positions = {index_point: 1, index_deriv: 0}
-    _free_positions = [index_point]
+    _positions = {index_quad: 1, index_deriv: 0}
+    _free_positions = [index_quad]
 
     def __new__(cls, target):
         if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
@@ -579,7 +579,7 @@ def loop_local_quadrature(stmts):
     quad    = Quadrature()
 
     iterator  = Iterator(quad)
-    generator = Generator(l_quad, index_point)
+    generator = Generator(l_quad, index_quad)
 
     return Loop(iterator, generator, stmts)
 
@@ -616,7 +616,7 @@ def loop_array_basis(target, stmts):
     basis    = Basis(target)
 
     iterator  = Iterator(basis)
-    generator = Generator(a_basis, index_point)
+    generator = Generator(a_basis, index_quad)
 
     return Loop(iterator, generator, stmts)
 

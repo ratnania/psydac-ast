@@ -32,7 +32,7 @@ from nodes import BasisAtom
 from nodes import PhysicalBasisValue
 from nodes import LogicalBasisValue
 from nodes import index_element
-from nodes import index_point
+from nodes import index_quad
 from nodes import index_dof
 from nodes import loop_local_quadrature
 from nodes import loop_global_quadrature
