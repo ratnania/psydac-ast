@@ -84,7 +84,7 @@ class Pattern(Tuple):
     pass
 
 #==============================================================================
-class Iterator(BaseNode):
+class IteratorNode(BaseNode):
     """
     """
     def __new__(cls, target, dummies=None):
@@ -104,7 +104,11 @@ class Iterator(BaseNode):
         return self._args[1]
 
 #==============================================================================
-class Generator(BaseNode):
+class TensorIterator(IteratorNode):
+    pass
+
+#==============================================================================
+class GeneratorNode(BaseNode):
     """
     """
     def __new__(cls, target, dummies):
@@ -124,6 +128,10 @@ class Generator(BaseNode):
     @property
     def dummies(self):
         return self._args[1]
+
+#==============================================================================
+class TensorGenerator(GeneratorNode):
+    pass
 
 #==============================================================================
 class Grid(BaseNode):
@@ -486,26 +494,26 @@ class Loop(BaseNode):
     def __new__(cls, iterator, generator, stmts=None):
         # TODO stmts should not be optional
         # ...
-        if isinstance(iterator, Iterator):
+        if isinstance(iterator, IteratorNode):
             iterator = [iterator]
 
         if not( isinstance(iterator, (list, tuple, Tuple)) ):
             raise TypeError('Expecting an iterable')
 
-        if not all([isinstance(i, Iterator) for i in iterator]):
+        if not all([isinstance(i, IteratorNode) for i in iterator]):
             raise TypeError('Expecting a list of Iterator')
 
         iterator = Tuple(*iterator)
         # ...
 
         # ...
-        if isinstance(generator, Generator):
+        if isinstance(generator, GeneratorNode):
             generator = [generator]
 
         if not( isinstance(generator, (list, tuple, Tuple)) ):
             raise TypeError('Expecting an iterable')
 
-        if not all([isinstance(i, Generator) for i in generator]):
+        if not all([isinstance(i, GeneratorNode) for i in generator]):
             raise TypeError('Expecting a list of Generator')
 
         generator = Tuple(*generator)
@@ -536,17 +544,17 @@ class Loop(BaseNode):
         return self._args[2]
 
 #==============================================================================
-class IterationStatement(BaseNode):
+class TensorIterationStatement(BaseNode):
     """
     """
 
     def __new__(cls, iterator, generator):
         # ...
-        if not( isinstance(iterator, Iterator) ):
-            raise TypeError('Expecting an Iterator')
+        if not( isinstance(iterator, TensorIterator) ):
+            raise TypeError('Expecting an TensorIterator')
 
-        if not( isinstance(generator, Generator) ):
-            raise TypeError('Expecting a Generator')
+        if not( isinstance(generator, TensorGenerator) ):
+            raise TypeError('Expecting a TensorGenerator')
         # ...
 
         return Basic.__new__(cls, iterator, generator)
@@ -566,8 +574,8 @@ def loop_global_quadrature(stmts):
     g_quad  = GlobalQuadrature()
     l_quad  = LocalQuadrature()
 
-    iterator  = Iterator(l_quad)
-    generator = Generator(g_quad, index_element)
+    iterator  = TensorIterator(l_quad)
+    generator = TensorGenerator(g_quad, index_element)
 
     return Loop(iterator, generator, stmts)
 
@@ -578,8 +586,8 @@ def loop_local_quadrature(stmts):
     l_quad  = LocalQuadrature()
     quad    = Quadrature()
 
-    iterator  = Iterator(quad)
-    generator = Generator(l_quad, index_quad)
+    iterator  = TensorIterator(quad)
+    generator = TensorGenerator(l_quad, index_quad)
 
     return Loop(iterator, generator, stmts)
 
@@ -590,9 +598,9 @@ def loop_global_basis(target, stmts):
     g_basis  = GlobalBasis(target)
     l_basis  = LocalBasis(target)
 
-    iterator  = Iterator(l_basis)
+    iterator  = TensorIterator(l_basis)
     # TODO
-    generator = Generator(g_basis, index_element)
+    generator = TensorGenerator(g_basis, index_element)
 
     return Loop(iterator, generator, stmts)
 
@@ -603,8 +611,8 @@ def loop_local_basis(target, stmts):
     l_basis  = LocalBasis(target)
     a_basis    = ArrayBasis(target)
 
-    iterator  = Iterator(a_basis)
-    generator = Generator(l_basis, index_dof)
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
 
     return Loop(iterator, generator, stmts)
 
@@ -615,8 +623,8 @@ def loop_array_basis(target, stmts):
     a_basis  = ArrayBasis(target)
     basis    = Basis(target)
 
-    iterator  = Iterator(basis)
-    generator = Generator(a_basis, index_quad)
+    iterator  = TensorIterator(basis)
+    generator = TensorGenerator(a_basis, index_quad)
 
     return Loop(iterator, generator, stmts)
 
@@ -627,8 +635,8 @@ def loop_global_span(target, stmts):
     g_span = GlobalSpan(target)
     span   = Span(target)
 
-    iterator  = Iterator(span)
-    generator = Generator(g_span, index_element)
+    iterator  = TensorIterator(span)
+    generator = TensorGenerator(g_span, index_element)
 
     return Loop(iterator, generator, stmts)
 
@@ -680,5 +688,3 @@ def construct_logical_expressions(u, nderiv):
         args.append(atom)
 
     return [ComputeLogicalBasis(i) for i in args]
-
-

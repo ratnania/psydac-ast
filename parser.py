@@ -38,7 +38,7 @@ from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
 from nodes import Accumulate
-from nodes import IterationStatement
+from nodes import TensorIterationStatement
 
 
 #==============================================================================
@@ -490,7 +490,7 @@ class Parser(object):
         return symbols('p1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_Iterator(self, expr):
+    def _visit_TensorIterator(self, expr):
         dim  = self.dim
         target = self._visit(expr.target)
 
@@ -501,7 +501,7 @@ class Parser(object):
             raise NotImplementedError('TODO')
 
     # ....................................................
-    def _visit_Generator(self, expr):
+    def _visit_TensorGenerator(self, expr):
         dim    = self.dim
         target = self._visit(expr.target)
 
@@ -536,7 +536,7 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_IterationStatement(self, expr):
+    def _visit_TensorIterationStatement(self, expr):
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
 
@@ -588,7 +588,7 @@ class Parser(object):
     def _visit_Loop(self, expr):
 #        print('**** Enter Loop ')
         # create iteration statements
-        iterations = [IterationStatement(i,j)
+        iterations = [TensorIterationStatement(i,j)
                       for i,j in zip(expr.iterator, expr.generator)]
 
         iterations = [self._visit(i) for i in iterations]

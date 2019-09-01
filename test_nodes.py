@@ -16,8 +16,8 @@ from sympde.topology import Mapping
 
 from nodes import Grid
 from nodes import Element
-from nodes import Iterator
-from nodes import Generator
+from nodes import TensorIterator
+from nodes import TensorGenerator
 from nodes import Loop
 from nodes import GlobalQuadrature
 from nodes import LocalQuadrature
@@ -229,10 +229,10 @@ def test_nodes_2d_8():
 #==============================================================================
 def test_nodes_2d_9():
     iterator  = (l_quad, span)
-    iterator  = [Iterator(i) for i in iterator]
+    iterator  = [TensorIterator(i) for i in iterator]
 
     generator  = (g_quad, g_span)
-    generator  = [Generator(i, index_element) for i in generator]
+    generator  = [TensorGenerator(i, index_element) for i in generator]
 
     stmts = []
     loop = Loop(iterator, generator, stmts)
@@ -245,10 +245,10 @@ def test_nodes_2d_9():
 #==============================================================================
 def test_nodes_2d_10():
     iterator  = (l_quad, l_basis, span)
-    iterator  = [Iterator(i) for i in iterator]
+    iterator  = [TensorIterator(i) for i in iterator]
 
     generator  = (g_quad, g_basis, g_span)
-    generator  = [Generator(i, index_element) for i in generator]
+    generator  = [TensorGenerator(i, index_element) for i in generator]
 
     stmts = []
     loop = Loop(iterator, generator, stmts)
@@ -273,10 +273,10 @@ def test_nodes_2d_11():
     # ...
 
     iterator  = (l_quad, l_basis, span)
-    iterator  = [Iterator(i) for i in iterator]
+    iterator  = [TensorIterator(i) for i in iterator]
 
     generator  = (g_quad, g_basis, g_span)
-    generator  = [Generator(i, index_element) for i in generator]
+    generator  = [TensorGenerator(i, index_element) for i in generator]
 
     stmts = [loop]
     loop = Loop(iterator, generator, stmts)
