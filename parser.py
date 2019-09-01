@@ -426,7 +426,6 @@ class Parser(object):
 
     # ....................................................
     def _visit_PhysicalGeometryValue(self, expr):
-        print('PAR ICI')
         mapping = self.mapping
         expr = LogicalExpr(mapping, expr.expr)
 
