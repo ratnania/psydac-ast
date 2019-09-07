@@ -83,8 +83,8 @@ class Parser(object):
         nderiv = None
         if not( settings is None ):
             nderiv = settings.pop('nderiv', None)
-            if nderiv is None:
-                raise ValueError('nderiv not provided')
+#            if nderiv is None:
+#                raise ValueError('nderiv not provided')
 
         self._nderiv = nderiv
         # ...

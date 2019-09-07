@@ -39,12 +39,6 @@ from nodes import LogicalBasisValue
 from nodes import index_element
 from nodes import index_quad
 from nodes import index_dof
-from nodes import loop_local_quadrature
-from nodes import loop_global_quadrature
-from nodes import loop_array_basis
-from nodes import loop_local_basis
-from nodes import loop_global_basis
-from nodes import loop_global_span
 #from nodes import ComputePhysical
 #from nodes import ComputeLogical
 from nodes import ComputePhysicalBasis
@@ -87,35 +81,7 @@ l_coeff = MatrixLocalBasis(u)
 # ...
 
 #==============================================================================
-def test_nodes_2d_1():
-    # ...
-    loop = loop_local_quadrature([])
-    print(loop)
-    # ...
-
-    # ...
-    loop = loop_global_quadrature(loop)
-    print(loop)
-    # ...
-
-    print()
-
-#==============================================================================
-def test_nodes_2d_2():
-    # ...
-    loop = loop_local_basis(u, [])
-    print(loop)
-    # ...
-
-    # ...
-    loop = loop_global_basis(u, loop)
-    print(loop)
-    # ...
-
-    print()
-
-#==============================================================================
-def test_nodes_2d_3a():
+def test_basis_atom_2d_1():
     expr = dx(u)
     lhs  = BasisAtom(expr)
     rhs  = PhysicalBasisValue(expr)
@@ -130,10 +96,8 @@ def test_nodes_2d_3a():
     assert(_parse(lhs) == u_x)
     assert(_parse(rhs) == u_x1)
 
-    print()
-
 #==============================================================================
-def test_nodes_2d_3b():
+def test_basis_atom_2d_2():
     expr = dy(dx(u))
     lhs  = BasisAtom(expr)
     rhs  = PhysicalBasisValue(expr)
@@ -148,159 +112,8 @@ def test_nodes_2d_3b():
     assert(_parse(lhs) == u_xy)
     assert(_parse(rhs) == u_x1x2)
 
-    print()
-
 #==============================================================================
-def test_nodes_2d_4():
-    loop = loop_local_quadrature([])
-    # TODO do we need nderiv here?
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-# TODO to remove: we should not allow such tree
-#def test_nodes_2d_5a():
-#    loop = loop_local_quadrature([])
-#    loop = loop_array_basis(u, [loop])
-#    # TODO bug when nderiv=0
-#    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 1})
-#    print()
-#    print(pycode(stmt))
-#    print()
-
-#==============================================================================
-def test_nodes_2d_5b():
-    loop = loop_local_quadrature([])
-    loop = loop_array_basis(u, [loop])
-    loop = loop_local_basis(u, [loop])
-
-    # TODO bug when nderiv=0
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 1})
-    print()
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_6a():
-    body  = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
-    body  = [ComputePhysicalBasis(i) for i in body]
-#    body += [Accumulate('+', dy(u)*dx(u))]
-    loop = loop_local_quadrature(body)
-    loop = loop_local_basis(u, [loop])
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
-    print()
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_6b():
-    body  = [dx1(u)]
-    body  = [ComputeLogicalBasis(i) for i in body]
-    loop = loop_local_quadrature(body)
-    loop = loop_local_basis(u, [loop])
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
-    print()
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_6c():
-    body = []
-
-    expressions  = [dx1(u), dx2(u)]
-    body += [ComputeLogicalBasis(i) for i in expressions]
-
-    expressions  = [dx(u)]
-    body += [ComputePhysicalBasis(i) for i in expressions]
-
-    loop = loop_local_quadrature(body)
-    loop = loop_local_basis(u, [loop])
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
-    print()
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_7():
-    loop = loop_local_quadrature([])
-    loop = loop_global_quadrature([loop])
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_8():
-    loop = loop_global_span(u, [])
-    # TODO do we need nderiv here?
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_9():
-    iterator  = (l_quad, span)
-    iterator  = [TensorIterator(i) for i in iterator]
-
-    generator  = (g_quad, g_span)
-    generator  = [TensorGenerator(i, index_element) for i in generator]
-
-    stmts = []
-    loop = Loop(iterator, generator, stmts)
-
-    # TODO do we need nderiv here?
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_10():
-    iterator  = (l_quad, l_basis, span)
-    iterator  = [TensorIterator(i) for i in iterator]
-
-    generator  = (g_quad, g_basis, g_span)
-    generator  = [TensorGenerator(i, index_element) for i in generator]
-
-    stmts = []
-    loop = Loop(iterator, generator, stmts)
-
-    # TODO do we need nderiv here?
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_nodes_2d_11():
-    # ...
-    nderiv = 2
-    body = construct_logical_expressions(u, nderiv)
-
-    expressions = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
-    body  += [ComputePhysicalBasis(i) for i in expressions]
-
-    loop = loop_local_quadrature(body)
-    loop = loop_array_basis(u, [loop])
-    loop = loop_local_basis(u, [loop])
-    # ...
-
-    iterator  = (l_quad, l_basis, span)
-    iterator  = [TensorIterator(i) for i in iterator]
-
-    generator  = (g_quad, g_basis, g_span)
-    generator  = [TensorGenerator(i, index_element) for i in generator]
-
-    stmts = [loop]
-    loop = Loop(iterator, generator, stmts)
-
-    # TODO do we need nderiv here?
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
-    print(pycode(stmt))
-    print()
-
-
-
-#==============================================================================
-def test_nodes_2d_20a():
+def test_geometry_atom_2d_1():
     expr = M[0]
     lhs  = GeometryAtom(expr)
     rhs  = PhysicalGeometryValue(expr)
@@ -313,39 +126,21 @@ def test_nodes_2d_20a():
     assert(_parse(lhs) == x)
     # TODO add assert on parse rhs
 
-    print()
-
 #==============================================================================
-def test_nodes_2d_20b():
+def test_loop_local_quad_2d_1():
     stmts = []
+    iterator  = TensorIterator(quad)
+    generator = TensorGenerator(l_quad, index_quad)
+    loop      = Loop(iterator, generator, stmts)
 
-    geo_iterators, geo_generators = construct_geometry_iter_gener(M, nderiv=1)
-    iterator  = [TensorIterator(quad)] + geo_iterators
-    generator = [TensorGenerator(l_quad, index_quad)] + geo_generators
-
-    loop = Loop(iterator, generator, stmts)
-
-    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
-    _parse = lambda expr: parse(expr, settings=settings)
-
-    stmt = _parse(loop)
-    print()
+    stmt = parse(loop, settings={'dim': domain.dim})
     print(pycode(stmt))
-
     print()
 
 #==============================================================================
-def test_nodes_2d_30a():
+def test_loop_local_dof_quad_2d_1():
     # ...
-    nderiv = 1
-    body = construct_logical_expressions(u, nderiv)
-
-    expressions = [dx(u), dy(u)]
-    body  += [ComputePhysicalBasis(i) for i in expressions]
-    # ...
-
-    # ...
-    stmts = body
+    stmts = []
     iterator  = (TensorIterator(quad),
                  TensorIterator(basis))
     generator = (TensorGenerator(l_quad, index_quad),
@@ -360,6 +155,203 @@ def test_nodes_2d_30a():
     loop      = Loop(iterator, generator, stmts)
     # ...
 
+    # TODO bug when nderiv=0
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 1})
+    print()
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_loop_local_dof_quad_2d_2():
+    # ...
+    args   = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+    stmts  = [ComputePhysicalBasis(i) for i in args]
+#    stmts += [Accumulate('+', dy(u)*dx(u))]
+    # ...
+
+    # ...
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
+    print()
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_loop_local_dof_quad_2d_3():
+    # ...
+    stmts  = [dx1(u)]
+    stmts  = [ComputeLogicalBasis(i) for i in stmts]
+    # ...
+
+    # ...
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
+    print()
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_loop_local_dof_quad_2d_4():
+    # ...
+    stmts = []
+
+    expressions  = [dx1(u), dx2(u)]
+    stmts += [ComputeLogicalBasis(i) for i in expressions]
+
+    expressions  = [dx(u)]
+    stmts += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
+    print()
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_loop_global_local_quad_2d_1():
+    # ...
+    stmts = []
+    iterator  = TensorIterator(quad)
+    generator = TensorGenerator(l_quad, index_quad)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(l_quad)
+    generator = TensorGenerator(g_quad, index_element)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_span_2d_1():
+    # ...
+    stmts = []
+    iterator  = TensorIterator(span)
+    generator = TensorGenerator(g_span, index_element)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_quad_span_2d_1():
+    # ...
+    stmts = []
+    iterator  = (TensorIterator(l_quad),
+                 TensorIterator(span))
+    generator = (TensorGenerator(g_quad, index_element),
+                 TensorGenerator(g_span, index_element))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_quad_basis_span_2d_1():
+    # ...
+    stmts = []
+    iterator  = (TensorIterator(l_quad),
+                 TensorIterator(l_basis),
+                 TensorIterator(span))
+    generator = (TensorGenerator(g_quad, index_element),
+                 TensorGenerator(g_basis, index_element),
+                 TensorGenerator(g_span, index_element))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_quad_basis_span_2d_2():
+    # ...
+    nderiv = 2
+    stmts = construct_logical_expressions(u, nderiv)
+
+    expressions = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+    stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = (TensorIterator(l_quad),
+                 TensorIterator(l_basis),
+                 TensorIterator(span))
+    generator = (TensorGenerator(g_quad, index_element),
+                 TensorGenerator(g_basis, index_element),
+                 TensorGenerator(g_span, index_element))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
     # TODO do we need nderiv here?
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
     print(pycode(stmt))
@@ -367,31 +359,39 @@ def test_nodes_2d_30a():
 
 
 #==============================================================================
-def test_nodes_2d_30b():
-#    # ...
-#    args = [dx1(u), dx2(u)]
-#
-#    coeff_u = ProductGenerator(MatrixLocalBasis(u), index_dof)
-#    stmts = [AugAssign(ProductGenerator(MatrixQuadrature(i), index_quad),
-#                                        '+', Mul(coeff_u,AtomicNode(i)))
-#             for i in args]
-#    # ...
+def test_loop_local_quad_geometry_2d_1():
+    # ...
+    stmts = []
+    geo_iterators, geo_generators = construct_geometry_iter_gener(M, nderiv=1)
 
+    iterator  = [TensorIterator(quad)] + geo_iterators
+    generator = [TensorGenerator(l_quad, index_quad)] + geo_generators
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
+    _parse = lambda expr: parse(expr, settings=settings)
+
+    stmt = _parse(loop)
+    print()
+    print(pycode(stmt))
+
+    print()
+
+#==============================================================================
+def test_eval_field_2d_1():
     # ...
     args = [dx1(u), dx2(u)]
 
+    # TODO improve
     stmts = [AugAssign(ProductGenerator(MatrixQuadrature(i), index_quad),
                                         '+', Mul(coeff,AtomicNode(i)))
              for i in args]
     # ...
 
-
     # ...
     nderiv = 1
     body = construct_logical_expressions(u, nderiv)
-
-#    expressions = [dx1(u), dx2(u)]
-#    body  += [ComputeLogicalBasis(i) for i in expressions]
     # ...
 
     # ...
@@ -432,27 +432,22 @@ def teardown_function():
 
 
 #==============================================================================
-#test_nodes_2d_30a()
-test_nodes_2d_30b()
-#test_nodes_2d_20b()
-import sys; sys.exit(0)
 
 # tests without assert
-test_nodes_2d_1()
-test_nodes_2d_2()
-test_nodes_2d_4()
-test_nodes_2d_5b()
-test_nodes_2d_6a()
-test_nodes_2d_6b()
-test_nodes_2d_6c()
-test_nodes_2d_7()
-test_nodes_2d_8()
-test_nodes_2d_9()
-test_nodes_2d_10()
-test_nodes_2d_11()
-test_nodes_2d_20b()
+test_loop_local_quad_2d_1()
+test_loop_local_dof_quad_2d_1()
+test_loop_local_dof_quad_2d_2()
+test_loop_local_dof_quad_2d_3()
+test_loop_local_dof_quad_2d_4()
+test_loop_global_local_quad_2d_1()
+test_global_span_2d_1()
+test_global_quad_span_2d_1()
+test_global_quad_basis_span_2d_1()
+test_global_quad_basis_span_2d_2()
+test_loop_local_quad_geometry_2d_1()
+test_eval_field_2d_1()
 
 # tests with assert
-test_nodes_2d_3a()
-test_nodes_2d_3b()
-test_nodes_2d_20a()
+test_basis_atom_2d_1()
+test_basis_atom_2d_2()
+test_geometry_atom_2d_1()
