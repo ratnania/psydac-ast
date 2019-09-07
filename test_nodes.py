@@ -57,6 +57,7 @@ from nodes import LogicalGeometryValue
 from nodes import construct_geometry_iter_gener
 from nodes import AtomicNode
 from nodes import MatrixLocalBasis
+from nodes import CoefficientBasis
 
 from parser import parse
 
@@ -81,6 +82,8 @@ a_basis = TensorQuadratureBasis(u)
 basis   = TensorBasis(u)
 g_span  = GlobalSpan(u)
 span    = Span(u)
+coeff   = CoefficientBasis(u)
+l_coeff = MatrixLocalBasis(u)
 # ...
 
 #==============================================================================
@@ -365,14 +368,23 @@ def test_nodes_2d_30a():
 
 #==============================================================================
 def test_nodes_2d_30b():
+#    # ...
+#    args = [dx1(u), dx2(u)]
+#
+#    coeff_u = ProductGenerator(MatrixLocalBasis(u), index_dof)
+#    stmts = [AugAssign(ProductGenerator(MatrixQuadrature(i), index_quad),
+#                                        '+', Mul(coeff_u,AtomicNode(i)))
+#             for i in args]
+#    # ...
+
     # ...
     args = [dx1(u), dx2(u)]
 
-    coeff_u = ProductGenerator(MatrixLocalBasis(u), index_dof)
     stmts = [AugAssign(ProductGenerator(MatrixQuadrature(i), index_quad),
-                                        '+', Mul(coeff_u,AtomicNode(i)))
+                                        '+', Mul(coeff,AtomicNode(i)))
              for i in args]
     # ...
+
 
     # ...
     nderiv = 1
@@ -393,8 +405,10 @@ def test_nodes_2d_30b():
 
     # ...
     stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof)
+    iterator  = (TensorIterator(a_basis),
+                 ProductIterator(coeff))
+    generator = (TensorGenerator(l_basis, index_dof),
+                 ProductGenerator(l_coeff, index_dof))
     loop      = Loop(iterator, generator, stmts)
     # ...
 

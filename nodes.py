@@ -6,7 +6,6 @@ from sympy.core.singleton import Singleton
 from sympy.core.compatibility import with_metaclass
 from sympy.core.containers import Tuple
 from sympy import AtomicExpr
-from sympy import Expr
 
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.topology import (dx1, dx2, dx3)
@@ -120,7 +119,7 @@ class TensorIterator(IteratorBase):
     pass
 
 #==============================================================================
-class ProductIterator(IteratorBase, Expr):
+class ProductIterator(IteratorBase):
     pass
 
 #==============================================================================
@@ -151,7 +150,7 @@ class TensorGenerator(GeneratorBase):
     pass
 
 #==============================================================================
-class ProductGenerator(GeneratorBase, Expr):
+class ProductGenerator(GeneratorBase):
     pass
 
 #==============================================================================
@@ -309,7 +308,7 @@ class TensorQuadratureBasis(ArrayNode):
         return self._args[0]
 
 #==============================================================================
-class TensorBasis(ScalarNode):
+class CoefficientBasis(ScalarNode):
     """
     """
     def __new__(cls, target):
@@ -321,6 +320,10 @@ class TensorBasis(ScalarNode):
     @property
     def target(self):
         return self._args[0]
+
+#==============================================================================
+class TensorBasis(CoefficientBasis):
+    pass
 
 #==============================================================================
 class MatrixLocalBasis(MatrixNode):

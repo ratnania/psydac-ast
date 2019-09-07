@@ -198,6 +198,11 @@ class Parser(object):
         return AugAssign(lhs, op, rhs)
 
     # ....................................................
+    def _visit_Add(self, expr):
+        args = [self._visit(i) for i in expr.args]
+        return Add(*args)
+
+    # ....................................................
     def _visit_Mul(self, expr):
         args = [self._visit(i) for i in expr.args]
         return Mul(*args)
@@ -357,6 +362,12 @@ class Parser(object):
             args.append(ls)
 
         return args
+
+    # ....................................................
+    def _visit_CoefficientBasis(self, expr):
+        target = SymbolicExpr(expr.target)
+        name = 'coeff_{}'.format(target.name)
+        return Variable('real', name)
 
     # ....................................................
     def _visit_MatrixLocalBasis(self, expr):
