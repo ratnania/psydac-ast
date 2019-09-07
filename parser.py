@@ -138,12 +138,12 @@ class Parser(object):
 
     # ....................................................
     def _visit_Assign(self, expr):
-        # TODO do we need this?
-#        lhs = self._visit(expr.lhs)
-#        rhs = self._visit(expr.rhs)
+        lhs = self._visit(expr.lhs)
+        rhs = self._visit(expr.rhs)
 
-        lhs = expr.lhs
-        rhs = expr.rhs
+        # ARA TODO check that all tests work
+#        lhs = expr.lhs
+#        rhs = expr.rhs
 
         # ... extract slices from rhs
         slices = []
@@ -169,7 +169,50 @@ class Parser(object):
 
     # ....................................................
     def _visit_AugAssign(self, expr):
-        raise NotImplementedError('TODO')
+#        print(type(expr.lhs))
+#        import sys; sys.exit(0)
+        lhs = self._visit(expr.lhs)
+        rhs = self._visit(expr.rhs)
+        op  = expr.op
+
+        # ... extract slices from rhs
+        slices = []
+        if isinstance(rhs, IndexedElement):
+            indices = rhs.indices[0]
+            slices = [i for i in indices if isinstance(i, Slice)]
+        # ...
+
+        # ... update lhs with slices
+        if len(slices) > 0:
+            # TODO add assert on type lhs
+            if isinstance(lhs, (IndexedBase, IndexedVariable)):
+                lhs = lhs[slices]
+
+            elif isinstance(lhs, Symbol):
+                lhs = IndexedBase(lhs.name)[slices]
+
+            else:
+                raise NotImplementedError('{}'.format(type(lhs)))
+        # ...
+
+        return AugAssign(lhs, op, rhs)
+
+    # ....................................................
+    def _visit_Mul(self, expr):
+        args = [self._visit(i) for i in expr.args]
+        return Mul(*args)
+
+    # ....................................................
+    def _visit_Symbol(self, expr):
+        return expr
+
+    # ....................................................
+    def _visit_Variable(self, expr):
+        return expr
+
+    # ....................................................
+    def _visit_IndexedVariable(self, expr):
+        return expr
 
     # ....................................................
     def _visit_Tuple(self, expr):
@@ -316,6 +359,15 @@ class Parser(object):
         return args
 
     # ....................................................
+    def _visit_MatrixLocalBasis(self, expr):
+        dim = self.dim
+        rank   = self._visit(expr.rank)
+        target = SymbolicExpr(expr.target)
+
+        name = 'arr_{}'.format(target.name)
+        return IndexedVariable(name, dtype='real', rank=rank)
+
+    # ....................................................
     def _visit_GlobalSpan(self, expr):
         dim = self.dim
         rank = expr.rank
@@ -399,6 +451,11 @@ class Parser(object):
 
         rhs = self._visit(PhysicalBasisValue(expr))
         return self._visit(Assign(lhs, rhs))
+
+    # ....................................................
+    def _visit_BasisAtom(self, expr):
+        symbol = SymbolicExpr(expr.expr)
+        return symbol
 
     # ....................................................
     def _visit_AtomicNode(self, expr):

@@ -5,6 +5,8 @@ from sympy import Basic
 from sympy.core.singleton import Singleton
 from sympy.core.compatibility import with_metaclass
 from sympy.core.containers import Tuple
+from sympy import AtomicExpr
+from sympy import Expr
 
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.topology import (dx1, dx2, dx3)
@@ -118,7 +120,7 @@ class TensorIterator(IteratorBase):
     pass
 
 #==============================================================================
-class ProductIterator(IteratorBase):
+class ProductIterator(IteratorBase, Expr):
     pass
 
 #==============================================================================
@@ -149,7 +151,7 @@ class TensorGenerator(GeneratorBase):
     pass
 
 #==============================================================================
-class ProductGenerator(GeneratorBase):
+class ProductGenerator(GeneratorBase, Expr):
     pass
 
 #==============================================================================
@@ -159,13 +161,13 @@ class Grid(BaseNode):
     pass
 
 #==============================================================================
-class ScalarNode(BaseNode):
+class ScalarNode(BaseNode, AtomicExpr):
     """
     """
     pass
 
 #==============================================================================
-class ArrayNode(BaseNode):
+class ArrayNode(BaseNode, AtomicExpr):
     """
     """
     _rank = None
@@ -203,7 +205,7 @@ class ArrayNode(BaseNode):
         return Pattern(*args)
 
 #==============================================================================
-class MatrixNode(BaseNode):
+class MatrixNode(BaseNode, AtomicExpr):
     """
     """
     _rank = None
@@ -321,6 +323,21 @@ class TensorBasis(ScalarNode):
         return self._args[0]
 
 #==============================================================================
+class MatrixLocalBasis(MatrixNode):
+    """
+    used to describe local dof over an element
+    """
+    _rank = rank_dim
+
+    def __new__(cls, target):
+        # TODO check target
+        return Basic.__new__(cls, target)
+
+    @property
+    def target(self):
+        return self._args[0]
+
+#==============================================================================
 class GlobalSpan(ArrayNode):
     """
     """
@@ -427,10 +444,13 @@ class ExprNode(Basic):
     pass
 
 #==============================================================================
-class AtomicNode(ExprNode):
+class AtomicNode(ExprNode, AtomicExpr):
     """
     """
-    pass
+
+    @property
+    def expr(self):
+        return self._args[0]
 
 #==============================================================================
 class ValueNode(ExprNode):
@@ -666,11 +686,10 @@ def loop_local_quadrature(stmts):
 def loop_global_basis(target, stmts):
     """
     """
-    g_basis  = GlobalTensorQuadratureBasis(target)
-    l_basis  = LocalTensorQuadratureBasis(target)
+    g_basis = GlobalTensorQuadratureBasis(target)
+    l_basis = LocalTensorQuadratureBasis(target)
 
     iterator  = TensorIterator(l_basis)
-    # TODO
     generator = TensorGenerator(g_basis, index_element)
 
     return Loop(iterator, generator, stmts)
@@ -679,8 +698,8 @@ def loop_global_basis(target, stmts):
 def loop_local_basis(target, stmts):
     """
     """
-    l_basis  = LocalTensorQuadratureBasis(target)
-    a_basis    = TensorQuadratureBasis(target)
+    l_basis = LocalTensorQuadratureBasis(target)
+    a_basis = TensorQuadratureBasis(target)
 
     iterator  = TensorIterator(a_basis)
     generator = TensorGenerator(l_basis, index_dof)
@@ -691,8 +710,8 @@ def loop_local_basis(target, stmts):
 def loop_array_basis(target, stmts):
     """
     """
-    a_basis  = TensorQuadratureBasis(target)
-    basis    = TensorBasis(target)
+    a_basis = TensorQuadratureBasis(target)
+    basis   = TensorBasis(target)
 
     iterator  = TensorIterator(basis)
     generator = TensorGenerator(a_basis, index_quad)
@@ -784,6 +803,6 @@ def construct_geometry_iter_gener(M, nderiv):
     iterators   = [ProductIterator(GeometryAtom(i))
                    for i in args]
     generators  = [ProductGenerator(MatrixQuadrature(i), index_quad)
-                       for i in args]
+                   for i in args]
 
     return iterators, generators

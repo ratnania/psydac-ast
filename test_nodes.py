@@ -1,8 +1,10 @@
 # -*- coding: UTF-8 -*-
 
 from sympy import Symbol
+from sympy import Mul
 
 from pyccel.ast import Assign
+from pyccel.ast import AugAssign
 # TODO remove
 from pyccel.codegen.printing.pycode import pycode
 
@@ -53,6 +55,8 @@ from nodes import GeometryAtom
 from nodes import PhysicalGeometryValue
 from nodes import LogicalGeometryValue
 from nodes import construct_geometry_iter_gener
+from nodes import AtomicNode
+from nodes import MatrixLocalBasis
 
 from parser import parse
 
@@ -327,6 +331,77 @@ def test_nodes_2d_20b():
 
     print()
 
+#==============================================================================
+def test_nodes_2d_30a():
+    # ...
+    nderiv = 1
+    body = construct_logical_expressions(u, nderiv)
+
+    expressions = [dx(u), dy(u)]
+    body  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    stmts = body
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    print(pycode(stmt))
+    print()
+
+
+#==============================================================================
+def test_nodes_2d_30b():
+    # ...
+    args = [dx1(u), dx2(u)]
+
+    coeff_u = ProductGenerator(MatrixLocalBasis(u), index_dof)
+    stmts = [AugAssign(ProductGenerator(MatrixQuadrature(i), index_quad),
+                                        '+', Mul(coeff_u,AtomicNode(i)))
+             for i in args]
+    # ...
+
+    # ...
+    nderiv = 1
+    body = construct_logical_expressions(u, nderiv)
+
+#    expressions = [dx1(u), dx2(u)]
+#    body  += [ComputeLogicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    stmts = body + stmts
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    print(pycode(stmt))
+    print()
 
 
 #==============================================================================
@@ -343,8 +418,10 @@ def teardown_function():
 
 
 #==============================================================================
+#test_nodes_2d_30a()
+test_nodes_2d_30b()
 #test_nodes_2d_20b()
-#import sys; sys.exit(0)
+import sys; sys.exit(0)
 
 # tests without assert
 test_nodes_2d_1()
