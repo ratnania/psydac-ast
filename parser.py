@@ -44,6 +44,8 @@ from nodes import TensorGenerator
 from nodes import ProductIteration
 from nodes import ProductIterator
 from nodes import ProductGenerator
+from nodes import StencilMatrixLocalBasis
+from nodes import AdjointOf
 
 
 #==============================================================================
@@ -406,17 +408,22 @@ class Parser(object):
     # ....................................................
     def _visit_Accumulate(self, expr, **kwargs):
         op   = expr.op
+        lhs  = expr.lhs
         expr = expr.expr
-        return self._visit(expr, op=op)
+        if not( lhs is None ):
+            lhs = self._visit(lhs)
+
+        return self._visit(expr, op=op, lhs=lhs)
 
     # ....................................................
-    def _visit_ComputeLogical(self, expr, op=None, **kwargs):
+    def _visit_ComputeLogical(self, expr, op=None, lhs=None, **kwargs):
         expr = expr.expr
-        if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(AtomicNode(expr), **kwargs)
-        else:
-            lhs = random_string( 6 )
-            lhs = Symbol('tmp_{}'.format(lhs))
+        if lhs is None:
+            if not isinstance(expr, (Add, Mul)):
+                lhs = self._visit(AtomicNode(expr), **kwargs)
+            else:
+                lhs = random_string( 6 )
+                lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(LogicalValueNode(expr), **kwargs)
 
@@ -429,13 +436,14 @@ class Parser(object):
         return self._visit(stmt, **kwargs)
 
     # ....................................................
-    def _visit_ComputePhysical(self, expr, op=None, **kwargs):
+    def _visit_ComputePhysical(self, expr, op=None, lhs=None, **kwargs):
         expr = expr.expr
-        if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(AtomicNode(expr), **kwargs)
-        else:
-            lhs = random_string( 6 )
-            lhs = Symbol('tmp_{}'.format(lhs))
+        if lhs is None:
+            if not isinstance(expr, (Add, Mul)):
+                lhs = self._visit(AtomicNode(expr), **kwargs)
+            else:
+                lhs = random_string( 6 )
+                lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(PhysicalValueNode(expr), **kwargs)
 
@@ -448,13 +456,14 @@ class Parser(object):
         return self._visit(stmt, **kwargs)
 
     # ....................................................
-    def _visit_ComputeLogicalBasis(self, expr, op=None, **kwargs):
+    def _visit_ComputeLogicalBasis(self, expr, op=None, lhs=None, **kwargs):
         expr = expr.expr
-        if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(BasisAtom(expr), **kwargs)
-        else:
-            lhs = random_string( 6 )
-            lhs = Symbol('tmp_{}'.format(lhs))
+        if lhs is None:
+            if not isinstance(expr, (Add, Mul)):
+                lhs = self._visit(BasisAtom(expr), **kwargs)
+            else:
+                lhs = random_string( 6 )
+                lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(LogicalBasisValue(expr), **kwargs)
 
@@ -467,13 +476,14 @@ class Parser(object):
         return self._visit(stmt, **kwargs)
 
     # ....................................................
-    def _visit_ComputePhysicalBasis(self, expr, op=None, **kwargs):
+    def _visit_ComputePhysicalBasis(self, expr, op=None, lhs=None, **kwargs):
         expr = expr.expr
-        if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(BasisAtom(expr), **kwargs)
-        else:
-            lhs = random_string( 6 )
-            lhs = Symbol('tmp_{}'.format(lhs))
+        if lhs is None:
+            if not isinstance(expr, (Add, Mul)):
+                lhs = self._visit(BasisAtom(expr), **kwargs)
+            else:
+                lhs = random_string( 6 )
+                lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(PhysicalBasisValue(expr), **kwargs)
 
@@ -536,6 +546,40 @@ class Parser(object):
         return SymbolicExpr(expr)
 
     # ....................................................
+    def _visit_AdjointOf(self, expr, **kwargs):
+        target = expr.target
+        return self._visit(target, adjoint=True, **kwargs)
+
+    # ....................................................
+    def _visit_ElementOf(self, expr, **kwargs):
+        dim    = self.dim
+        target = expr.target
+        if isinstance(target, StencilMatrixLocalBasis):
+            pads   = target.pads
+            rank   = target.rank
+            target = self._visit(target, **kwargs)
+
+            rows = self._visit(index_dof)
+            cols = self._visit(AdjointOf(index_dof))
+            pads = self._visit(pads)
+            indices = list(rows) + [cols[i]+pads[i]-rows[i] for i in range(dim)]
+
+            return target[indices]
+
+        else:
+            raise NotImplementedError('TODO')
+
+    # ....................................................
+    def _visit_StencilMatrixLocalBasis(self, expr, **kwargs):
+        pads = expr.pads
+        rank = expr.rank
+
+        name = random_string( 6 )
+        name = 'l_mat_{}'.format(name)
+
+        return IndexedVariable(name, dtype='real', rank=rank)
+
+    # ....................................................
     def _visit_Pattern(self, expr, **kwargs):
         # this is for multi-indices for the moment
         dim = self.dim
@@ -559,6 +603,10 @@ class Parser(object):
         return args
 
     # ....................................................
+    def _visit_Expr(self, expr, **kwargs):
+        return SymbolicExpr(expr)
+
+    # ....................................................
     def _visit_IndexElement(self, expr, **kwargs):
         dim = self.dim
         return symbols('i_element_1:%d'%(dim+1))
@@ -569,9 +617,13 @@ class Parser(object):
         return symbols('i_quad_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_IndexDof(self, expr, **kwargs):
+    def _visit_IndexDof(self, expr, adjoint=False, **kwargs):
         dim = self.dim
-        return symbols('i_basis_1:%d'%(dim+1))
+        if adjoint:
+            return symbols('j_basis_1:%d'%(dim+1))
+
+        else:
+            return symbols('i_basis_1:%d'%(dim+1))
 
     # ....................................................
     def _visit_IndexDerivative(self, expr, **kwargs):

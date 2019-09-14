@@ -2,6 +2,7 @@
 
 from sympy import Symbol
 from sympy import Mul
+from sympy import symbols
 
 from pyccel.ast import Assign
 from pyccel.ast import AugAssign
@@ -52,6 +53,8 @@ from nodes import construct_geometry_iter_gener
 from nodes import AtomicNode
 from nodes import MatrixLocalBasis
 from nodes import CoefficientBasis
+from nodes import StencilMatrixLocalBasis
+from nodes import ElementOf
 
 from parser import parse
 
@@ -78,6 +81,9 @@ g_span  = GlobalSpan(u)
 span    = Span(u)
 coeff   = CoefficientBasis(u)
 l_coeff = MatrixLocalBasis(u)
+
+pads    = symbols('p1, p2, p3')[:domain.dim]
+l_mat   = StencilMatrixLocalBasis(pads)
 # ...
 
 #==============================================================================
@@ -355,7 +361,52 @@ def test_global_quad_basis_span_2d_2():
     loop      = Loop(iterator, generator, stmts)
     # ...
 
-    # TODO do we need nderiv here?
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_quad_basis_span_2d_3():
+    # ...
+    nderiv = 2
+    stmts = construct_logical_expressions(u, nderiv)
+
+    expressions = [dx(u), dx(dy(u)), dy(dy(u))]
+    stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    stmts += [Accumulate('+',
+                         ComputePhysicalBasis(dx(u)*dx(v)),
+                         ElementOf(l_mat))]
+    # ...
+
+    # ...
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = (TensorIterator(l_quad),
+                 TensorIterator(l_basis),
+                 TensorIterator(span))
+    generator = (TensorGenerator(g_quad, index_element),
+                 TensorGenerator(g_basis, index_element),
+                 TensorGenerator(g_span, index_element))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
     print(pycode(stmt))
     print()
@@ -435,8 +486,8 @@ def teardown_function():
 
 
 #==============================================================================
-#test_global_quad_basis_span_2d_2()
-#import sys; sys.exit(0)
+test_global_quad_basis_span_2d_3()
+import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()

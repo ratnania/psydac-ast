@@ -341,6 +341,27 @@ class MatrixLocalBasis(MatrixNode):
         return self._args[0]
 
 #==============================================================================
+class StencilMatrixLocalBasis(MatrixNode):
+    """
+    used to describe local dof over an element as a stencil matrix
+    """
+    def __new__(cls, pads):
+        if not isinstance(pads, (list, tuple, Tuple)):
+            raise TypeError('Expecting an iterable')
+
+        pads = Tuple(*pads)
+        rank = 2*len(pads)
+        return Basic.__new__(cls, pads, rank)
+
+    @property
+    def pads(self):
+        return self._args[0]
+
+    @property
+    def rank(self):
+        return self._args[1]
+
+#==============================================================================
 class GlobalSpan(ArrayNode):
     """
     """
@@ -428,9 +449,9 @@ class ComputeLogicalBasis(ComputeLogical):
 class Accumulate(Basic):
     """
     """
-    def __new__(cls, op, expr):
+    def __new__(cls, op, expr, lhs=None):
         # TODO add verification on op = '-', '+', '*', '/'
-        return Basic.__new__(cls, op, expr)
+        return Basic.__new__(cls, op, expr, lhs)
 
     @property
     def op(self):
@@ -439,6 +460,35 @@ class Accumulate(Basic):
     @property
     def expr(self):
         return self._args[1]
+
+    @property
+    def lhs(self):
+        return self._args[2]
+
+#==============================================================================
+class ElementOf(Basic):
+    """
+    """
+    def __new__(cls, target):
+        return Basic.__new__(cls, target)
+
+    @property
+    def target(self):
+        return self._args[0]
+
+#==============================================================================
+class AdjointOf(Basic):
+    """
+    """
+    def __new__(cls, target):
+        if not isinstance(target, IndexDof):
+            raise NotImplementedError('TODO')
+
+        return Basic.__new__(cls, target)
+
+    @property
+    def target(self):
+        return self._args[0]
 
 #==============================================================================
 class ExprNode(Basic):
