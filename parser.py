@@ -137,7 +137,7 @@ class Parser(object):
         raise NotImplementedError('{}'.format(type(expr)))
 
     # ....................................................
-    def _visit_Assign(self, expr):
+    def _visit_Assign(self, expr, **kwargs):
         lhs = self._visit(expr.lhs)
         rhs = self._visit(expr.rhs)
 
@@ -168,7 +168,7 @@ class Parser(object):
         return Assign(lhs, rhs)
 
     # ....................................................
-    def _visit_AugAssign(self, expr):
+    def _visit_AugAssign(self, expr, **kwargs):
 #        print(type(expr.lhs))
 #        import sys; sys.exit(0)
         lhs = self._visit(expr.lhs)
@@ -198,42 +198,42 @@ class Parser(object):
         return AugAssign(lhs, op, rhs)
 
     # ....................................................
-    def _visit_Add(self, expr):
+    def _visit_Add(self, expr, **kwargs):
         args = [self._visit(i) for i in expr.args]
         return Add(*args)
 
     # ....................................................
-    def _visit_Mul(self, expr):
+    def _visit_Mul(self, expr, **kwargs):
         args = [self._visit(i) for i in expr.args]
         return Mul(*args)
 
     # ....................................................
-    def _visit_Symbol(self, expr):
+    def _visit_Symbol(self, expr, **kwargs):
         return expr
 
     # ....................................................
-    def _visit_Variable(self, expr):
+    def _visit_Variable(self, expr, **kwargs):
         return expr
 
     # ....................................................
-    def _visit_IndexedVariable(self, expr):
+    def _visit_IndexedVariable(self, expr, **kwargs):
         return expr
 
     # ....................................................
-    def _visit_Tuple(self, expr):
+    def _visit_Tuple(self, expr, **kwargs):
         args = [self._visit(i) for i in expr]
         return Tuple(*args)
 
     # ....................................................
-    def _visit_Grid(self, expr):
+    def _visit_Grid(self, expr, **kwargs):
         raise NotImplementedError('TODO')
 
     # ....................................................
-    def _visit_Element(self, expr):
+    def _visit_Element(self, expr, **kwargs):
         raise NotImplementedError('TODO')
 
     # ....................................................
-    def _visit_GlobalTensorQuadrature(self, expr):
+    def _visit_GlobalTensorQuadrature(self, expr, **kwargs):
         dim  = self.dim
         rank = expr.rank
 
@@ -249,7 +249,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_LocalTensorQuadrature(self, expr):
+    def _visit_LocalTensorQuadrature(self, expr, **kwargs):
         dim  = self.dim
         rank = expr.rank
 
@@ -265,7 +265,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_TensorQuadrature(self, expr):
+    def _visit_TensorQuadrature(self, expr, **kwargs):
         dim = self.dim
 
         names   = 'x1:%s'%(dim+1)
@@ -278,7 +278,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_MatrixQuadrature(self, expr):
+    def _visit_MatrixQuadrature(self, expr, **kwargs):
         dim = self.dim
         rank   = self._visit(expr.rank)
         target = SymbolicExpr(expr.target)
@@ -287,7 +287,7 @@ class Parser(object):
         return IndexedVariable(name, dtype='real', rank=rank)
 
     # ....................................................
-    def _visit_GlobalTensorQuadratureBasis(self, expr):
+    def _visit_GlobalTensorQuadratureBasis(self, expr, **kwargs):
         # TODO add label
         # TODO add ln
         dim = self.dim
@@ -305,7 +305,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_LocalTensorQuadratureBasis(self, expr):
+    def _visit_LocalTensorQuadratureBasis(self, expr, **kwargs):
         # TODO add label
         # TODO add ln
         dim = self.dim
@@ -323,7 +323,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_TensorQuadratureBasis(self, expr):
+    def _visit_TensorQuadratureBasis(self, expr, **kwargs):
         # TODO add label
         # TODO add ln
         dim = self.dim
@@ -341,7 +341,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_TensorBasis(self, expr):
+    def _visit_TensorBasis(self, expr, **kwargs):
         # TODO label
         dim = self.dim
         nderiv = self.nderiv
@@ -364,13 +364,13 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_CoefficientBasis(self, expr):
+    def _visit_CoefficientBasis(self, expr, **kwargs):
         target = SymbolicExpr(expr.target)
         name = 'coeff_{}'.format(target.name)
         return Variable('real', name)
 
     # ....................................................
-    def _visit_MatrixLocalBasis(self, expr):
+    def _visit_MatrixLocalBasis(self, expr, **kwargs):
         dim = self.dim
         rank   = self._visit(expr.rank)
         target = SymbolicExpr(expr.target)
@@ -379,7 +379,7 @@ class Parser(object):
         return IndexedVariable(name, dtype='real', rank=rank)
 
     # ....................................................
-    def _visit_GlobalSpan(self, expr):
+    def _visit_GlobalSpan(self, expr, **kwargs):
         dim = self.dim
         rank = expr.rank
 
@@ -392,7 +392,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_Span(self, expr):
+    def _visit_Span(self, expr, **kwargs):
         dim = self.dim
 
         names  = 'span1:%s'%(dim+1)
@@ -404,77 +404,99 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_Accumulate(self, expr):
+    def _visit_Accumulate(self, expr, **kwargs):
         op   = expr.op
         expr = expr.expr
-
-        # TODO improve lhs
-        lhs = random_string( 6 )
-        lhs = Symbol('tmp_{}'.format(lhs))
-
-        rhs = self._visit(BasisValue(expr))
-        return self._visit(AugAssign(lhs, op, rhs))
+        return self._visit(expr, op=op)
 
     # ....................................................
-    def _visit_ComputeLogical(self, expr):
+    def _visit_ComputeLogical(self, expr, op=None, **kwargs):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(AtomicNode(expr))
+            lhs = self._visit(AtomicNode(expr), **kwargs)
         else:
             lhs = random_string( 6 )
             lhs = Symbol('tmp_{}'.format(lhs))
 
-        rhs = self._visit(LogicalValueNode(expr))
-        return self._visit(Assign(lhs, rhs))
+        rhs = self._visit(LogicalValueNode(expr), **kwargs)
+
+        if op is None:
+            stmt = Assign(lhs, rhs)
+
+        else:
+            stmt = AugAssign(lhs, op, rhs)
+
+        return self._visit(stmt, **kwargs)
 
     # ....................................................
-    def _visit_ComputePhysical(self, expr):
+    def _visit_ComputePhysical(self, expr, op=None, **kwargs):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(AtomicNode(expr))
+            lhs = self._visit(AtomicNode(expr), **kwargs)
         else:
             lhs = random_string( 6 )
             lhs = Symbol('tmp_{}'.format(lhs))
 
-        rhs = self._visit(PhysicalValueNode(expr))
-        return self._visit(Assign(lhs, rhs))
+        rhs = self._visit(PhysicalValueNode(expr), **kwargs)
+
+        if op is None:
+            stmt = Assign(lhs, rhs)
+
+        else:
+            stmt = AugAssign(lhs, op, rhs)
+
+        return self._visit(stmt, **kwargs)
 
     # ....................................................
-    def _visit_ComputeLogicalBasis(self, expr):
+    def _visit_ComputeLogicalBasis(self, expr, op=None, **kwargs):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(BasisAtom(expr))
+            lhs = self._visit(BasisAtom(expr), **kwargs)
         else:
             lhs = random_string( 6 )
             lhs = Symbol('tmp_{}'.format(lhs))
 
-        rhs = self._visit(LogicalBasisValue(expr))
-        return self._visit(Assign(lhs, rhs))
+        rhs = self._visit(LogicalBasisValue(expr), **kwargs)
+
+        if op is None:
+            stmt = Assign(lhs, rhs)
+
+        else:
+            stmt = AugAssign(lhs, op, rhs)
+
+        return self._visit(stmt, **kwargs)
 
     # ....................................................
-    def _visit_ComputePhysicalBasis(self, expr):
+    def _visit_ComputePhysicalBasis(self, expr, op=None, **kwargs):
         expr = expr.expr
         if not isinstance(expr, (Add, Mul)):
-            lhs = self._visit(BasisAtom(expr))
+            lhs = self._visit(BasisAtom(expr), **kwargs)
         else:
             lhs = random_string( 6 )
             lhs = Symbol('tmp_{}'.format(lhs))
 
-        rhs = self._visit(PhysicalBasisValue(expr))
-        return self._visit(Assign(lhs, rhs))
+        rhs = self._visit(PhysicalBasisValue(expr), **kwargs)
+
+        if op is None:
+            stmt = Assign(lhs, rhs)
+
+        else:
+            stmt = AugAssign(lhs, op, rhs)
+
+        return self._visit(stmt, **kwargs)
 
     # ....................................................
-    def _visit_BasisAtom(self, expr):
+    def _visit_BasisAtom(self, expr, **kwargs):
         symbol = SymbolicExpr(expr.expr)
         return symbol
 
     # ....................................................
-    def _visit_AtomicNode(self, expr):
+    def _visit_AtomicNode(self, expr, **kwargs):
         symbol = SymbolicExpr(expr.expr)
         return symbol
 
     # ....................................................
-    def _visit_LogicalBasisValue(self, expr):
+    def _visit_LogicalBasisValue(self, expr, **kwargs):
         # ...
         dim = self.dim
         coords = ['x1', 'x2', 'x3'][:dim]
@@ -500,21 +522,21 @@ class Parser(object):
         return SymbolicExpr(expr)
 
     # ....................................................
-    def _visit_PhysicalValueNode(self, expr):
+    def _visit_PhysicalValueNode(self, expr, **kwargs):
         mapping = self.mapping
         expr = LogicalExpr(mapping, expr.expr)
 
         return SymbolicExpr(expr)
 
     # ....................................................
-    def _visit_PhysicalGeometryValue(self, expr):
+    def _visit_PhysicalGeometryValue(self, expr, **kwargs):
         mapping = self.mapping
         expr = LogicalExpr(mapping, expr.expr)
 
         return SymbolicExpr(expr)
 
     # ....................................................
-    def _visit_Pattern(self, expr):
+    def _visit_Pattern(self, expr, **kwargs):
         # this is for multi-indices for the moment
         dim = self.dim
         args = []
@@ -537,58 +559,58 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_IndexElement(self, expr):
+    def _visit_IndexElement(self, expr, **kwargs):
         dim = self.dim
         return symbols('i_element_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_IndexQuadrature(self, expr):
+    def _visit_IndexQuadrature(self, expr, **kwargs):
         dim = self.dim
         return symbols('i_quad_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_IndexDof(self, expr):
+    def _visit_IndexDof(self, expr, **kwargs):
         dim = self.dim
         return symbols('i_basis_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_IndexDerivative(self, expr):
+    def _visit_IndexDerivative(self, expr, **kwargs):
         raise NotImplementedError('TODO')
 
     # ....................................................
-    def _visit_LengthElement(self, expr):
+    def _visit_LengthElement(self, expr, **kwargs):
         dim = self.dim
         return symbols('n_element_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_LengthQuadrature(self, expr):
+    def _visit_LengthQuadrature(self, expr, **kwargs):
         dim = self.dim
         return symbols('k1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_LengthDof(self, expr):
+    def _visit_LengthDof(self, expr, **kwargs):
         # TODO must be p+1
         dim = self.dim
         return symbols('p1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_RankDimension(self, expr):
+    def _visit_RankDimension(self, expr, **kwargs):
         return self.dim
 
     # ....................................................
-    def _visit_TensorIterator(self, expr):
+    def _visit_TensorIterator(self, expr, **kwargs):
         dim  = self.dim
         target = self._visit(expr.target)
         return target
 
     # ....................................................
-    def _visit_ProductIterator(self, expr):
+    def _visit_ProductIterator(self, expr, **kwargs):
         dim  = self.dim
         target = self._visit(expr.target)
         return target
 
     # ....................................................
-    def _visit_TensorGenerator(self, expr):
+    def _visit_TensorGenerator(self, expr, **kwargs):
         dim    = self.dim
         target = self._visit(expr.target)
 
@@ -614,7 +636,7 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_ProductGenerator(self, expr):
+    def _visit_ProductGenerator(self, expr, **kwargs):
         dim    = self.dim
         target = self._visit(expr.target)
 
@@ -625,7 +647,7 @@ class Parser(object):
         return target[dummies]
 
     # ....................................................
-    def _visit_TensorIteration(self, expr):
+    def _visit_TensorIteration(self, expr, **kwargs):
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
 
@@ -674,7 +696,7 @@ class Parser(object):
         return  indices, lengths, inits
 
     # ....................................................
-    def _visit_ProductIteration(self, expr):
+    def _visit_ProductIteration(self, expr, **kwargs):
         # TODO for the moment, we do not return indices and lengths
         iterator  = self._visit(expr.iterator)
         generator = self._visit(expr.generator)
@@ -682,7 +704,7 @@ class Parser(object):
         return Assign(iterator, generator)
 
     # ....................................................
-    def _visit_Loop(self, expr):
+    def _visit_Loop(self, expr, **kwargs):
         # we first create iteration statements
         # these iterations are splitted between what is tensor or not
 
@@ -754,7 +776,7 @@ class Parser(object):
         return body
 
     # ....................................................
-    def _visit_SplitArray(self, expr):
+    def _visit_SplitArray(self, expr, **kwargs):
         target  = expr.target
         positions = expr.positions
         lengths = expr.lengths
@@ -772,12 +794,12 @@ class Parser(object):
         return args
 
     # ....................................................
-    def _visit_IndexedElement(self, expr):
+    def _visit_IndexedElement(self, expr, **kwargs):
         return expr
 
     # ....................................................
     # TODO to be removed. usefull for testing
-    def _visit_Pass(self, expr):
+    def _visit_Pass(self, expr, **kwargs):
         return expr
 
 

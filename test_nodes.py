@@ -43,7 +43,7 @@ from nodes import index_dof
 #from nodes import ComputeLogical
 from nodes import ComputePhysicalBasis
 from nodes import ComputeLogicalBasis
-#from nodes import Accumulate # TODO fix
+from nodes import Accumulate
 from nodes import construct_logical_expressions
 from nodes import GeometryAtom
 from nodes import PhysicalGeometryValue
@@ -166,7 +166,6 @@ def test_loop_local_dof_quad_2d_2():
     # ...
     args   = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
     stmts  = [ComputePhysicalBasis(i) for i in args]
-#    stmts += [Accumulate('+', dy(u)*dx(u))]
     # ...
 
     # ...
@@ -322,8 +321,12 @@ def test_global_quad_basis_span_2d_2():
     nderiv = 2
     stmts = construct_logical_expressions(u, nderiv)
 
-    expressions = [dx(u), dx(dy(u)), dy(dy(u)), dx(u) + dy(u)]
+    expressions = [dx(u), dx(dy(u)), dy(dy(u))]
     stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    stmts  += [Accumulate('+', ComputePhysicalBasis(dx(u)*dx(v)))]
     # ...
 
     # ...
@@ -432,6 +435,8 @@ def teardown_function():
 
 
 #==============================================================================
+#test_global_quad_basis_span_2d_2()
+#import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()
