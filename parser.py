@@ -3,6 +3,7 @@ from collections import OrderedDict
 from sympy import IndexedBase, Indexed
 from sympy import Mul
 from sympy import Add
+from sympy import Abs
 from sympy import symbols, Symbol
 from sympy.core.containers import Tuple
 
@@ -23,6 +24,7 @@ from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.expr.evaluation import _split_test_function
 from sympde.topology import SymbolicDeterminant
 from sympde.topology import SymbolicInverseDeterminant
+from sympde.topology import SymbolicWeightedVolume
 
 from nodes import AtomicNode
 from nodes import BasisAtom
@@ -55,6 +57,7 @@ from nodes import StencilVectorGlobalBasis
 from nodes import TensorQuadratureTestBasis, TensorQuadratureTrialBasis
 from nodes import Span
 from nodes import Loop
+from nodes import WeightedVolumeQuadrature
 
 
 #==============================================================================
@@ -597,8 +600,13 @@ class Parser(object):
 
     # ....................................................
     def _visit_AtomicNode(self, expr, **kwargs):
-        symbol = SymbolicExpr(expr.expr)
-        return symbol
+        if isinstance(expr.expr, WeightedVolumeQuadrature):
+            mapping = self.mapping
+            expr = SymbolicWeightedVolume(mapping)
+            return self._visit(expr, **kwargs )
+
+        else:
+            return SymbolicExpr(expr.expr)
 
     # ....................................................
     def _visit_LogicalBasisValue(self, expr, **kwargs):
@@ -636,9 +644,22 @@ class Parser(object):
         elif isinstance(expr, SymbolicInverseDeterminant):
             return SymbolicExpr(1./SymbolicDeterminant(mapping))
 
+        elif isinstance(expr, WeightedVolumeQuadrature):
+            l_quad = TensorQuadrature()
+            l_quad = self._visit(l_quad, **kwargs)
+
+            points, weights = list(zip(*l_quad))
+            wvol = Mul(*weights)
+            return wvol
+
+        elif isinstance(expr, SymbolicWeightedVolume):
+            wvol = self._visit(expr, **kwargs)
+            det_jac = SymbolicDeterminant(mapping)
+            det_jac = SymbolicExpr(det_jac)
+            return wvol * Abs(det_jac)
+
         else:
-            raise NotImplementedError('TODO')
-#            return SymbolicExpr(expr)
+            raise TypeError('{} not available'.format(type(expr)))
 
     # ....................................................
     def _visit_PhysicalValueNode(self, expr, **kwargs):

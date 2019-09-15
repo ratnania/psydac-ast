@@ -12,6 +12,7 @@ from sympde.topology import (dx1, dx2, dx3)
 from sympde.topology import Mapping
 from sympde.topology import SymbolicDeterminant
 from sympde.topology import SymbolicInverseDeterminant
+from sympde.topology import SymbolicWeightedVolume
 
 
 #==============================================================================
@@ -270,6 +271,11 @@ class MatrixQuadrature(MatrixNode):
     def target(self):
         return self._args[0]
 
+#==============================================================================
+class WeightedVolumeQuadrature(ScalarNode):
+    """
+    """
+    pass
 
 #==============================================================================
 class GlobalTensorQuadratureBasis(ArrayNode):
@@ -908,6 +914,7 @@ class Loop(BaseNode):
         # ...
 
         # ...
+        geo_stmts = []
         if stmts is None:
             stmts = []
 
@@ -915,14 +922,31 @@ class Loop(BaseNode):
             stmts = [stmts]
 
         stmts = list(stmts)
+        # ...
+
+        # ... add weighted volume if local quadrature loop
+        l_quad = list(iterable.atoms(LocalTensorQuadrature))
+        if len(l_quad) > 0:
+            assert(len(l_quad) == 1)
+
+            l_quad = l_quad[0]
+            stmt  = ComputeLogical(WeightedVolumeQuadrature(l_quad))
+            geo_stmts += [stmt]
+        # ...
+
+        # ...
         if with_geo:
             # ... add determinant
             #     TODO add other expressions
-            geo_stmts  = [ComputeLogical(SymbolicDeterminant(mapping))]
+            geo_stmts += [ComputeLogical(SymbolicDeterminant(mapping))]
             geo_stmts += [ComputeLogical(SymbolicInverseDeterminant(mapping))]
+            geo_stmts += [ComputeLogical(SymbolicWeightedVolume(mapping))]
+
             stmts = geo_stmts + stmts
             # ...
+        # ...
 
+        # ...
         stmts = Tuple(*stmts)
         # ...
 
