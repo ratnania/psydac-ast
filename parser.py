@@ -21,6 +21,8 @@ from sympde.topology.derivatives import get_index_logical_derivatives
 from sympde.topology import element_of
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.expr.evaluation import _split_test_function
+from sympde.topology import SymbolicDeterminant
+from sympde.topology import SymbolicInverseDeterminant
 
 from nodes import AtomicNode
 from nodes import BasisAtom
@@ -39,6 +41,7 @@ from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
 from nodes import Reduction
+from nodes import LogicalValueNode
 from nodes import TensorIteration
 from nodes import TensorIterator
 from nodes import TensorGenerator
@@ -624,11 +627,30 @@ class Parser(object):
         return SymbolicExpr(expr)
 
     # ....................................................
+    def _visit_LogicalValueNode(self, expr, **kwargs):
+        mapping = self.mapping
+        expr = expr.expr
+        if isinstance(expr, SymbolicDeterminant):
+            return SymbolicExpr(mapping.det_jacobian)
+
+        elif isinstance(expr, SymbolicInverseDeterminant):
+            return SymbolicExpr(1./SymbolicDeterminant(mapping))
+
+        else:
+            raise NotImplementedError('TODO')
+#            return SymbolicExpr(expr)
+
+    # ....................................................
     def _visit_PhysicalValueNode(self, expr, **kwargs):
         mapping = self.mapping
         expr = LogicalExpr(mapping, expr.expr)
+        expr = SymbolicExpr(expr)
 
-        return SymbolicExpr(expr)
+        inv_jac = SymbolicInverseDeterminant(mapping)
+        jac = SymbolicExpr(mapping.det_jacobian)
+        expr = expr.subs(1/jac, inv_jac)
+
+        return expr
 
     # ....................................................
     def _visit_PhysicalGeometryValue(self, expr, **kwargs):

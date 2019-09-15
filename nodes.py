@@ -10,6 +10,8 @@ from sympy import AtomicExpr
 from sympde.topology import ScalarTestFunction, VectorTestFunction
 from sympde.topology import (dx1, dx2, dx3)
 from sympde.topology import Mapping
+from sympde.topology import SymbolicDeterminant
+from sympde.topology import SymbolicInverseDeterminant
 
 
 #==============================================================================
@@ -764,6 +766,22 @@ class Loop(BaseNode):
         iterable = Tuple(*iterable)
         # ...
 
+        # ... replace GeometryExpressions by a list of expressions
+        others = [i for i in iterable if not isinstance(i, GeometryExpressions)]
+        geos   = [i.arguments for i in iterable if isinstance(i, GeometryExpressions)]
+        with_geo = False # TODO remove
+        if len(geos) == 1:
+            geos = list(geos[0])
+            with_geo = True
+            mapping = list(iterable.atoms(Mapping))[0]
+
+        elif len(geos) > 1:
+            raise NotImplementedError('TODO')
+
+        iterable = others + geos
+        iterable = Tuple(*iterable)
+        # ...
+
         # ...
         if not( isinstance(index, IndexNode) ):
             print(type(index), index)
@@ -896,6 +914,15 @@ class Loop(BaseNode):
         elif not isinstance(stmts, (tuple, list, Tuple)):
             stmts = [stmts]
 
+        stmts = list(stmts)
+        if with_geo:
+            # ... add determinant
+            #     TODO add other expressions
+            geo_stmts  = [ComputeLogical(SymbolicDeterminant(mapping))]
+            geo_stmts += [ComputeLogical(SymbolicInverseDeterminant(mapping))]
+            stmts = geo_stmts + stmts
+            # ...
+
         stmts = Tuple(*stmts)
         # ...
 
@@ -1023,25 +1050,34 @@ def construct_logical_expressions(u, nderiv):
     return [ComputeLogicalBasis(i) for i in args]
 
 #==============================================================================
-def construct_geometry_expressions(M, nderiv):
-    dim = M.rdim
+class GeometryExpressions(Basic):
+    """
+    """
+    def __new__(cls, M, nderiv):
+        dim = M.rdim
 
-    ops = [dx1, dx2, dx3][:dim]
-    r = range(nderiv+1)
-    ranges = [r]*dim
-    indices = product(*ranges)
+        ops = [dx1, dx2, dx3][:dim]
+        r = range(nderiv+1)
+        ranges = [r]*dim
+        indices = product(*ranges)
 
-    indices = list(indices)
-    indices = [ijk for ijk in indices if sum(ijk) <= nderiv]
+        indices = list(indices)
+        indices = [ijk for ijk in indices if sum(ijk) <= nderiv]
 
-    args = []
-    for d in range(dim):
-        for ijk in indices:
-            atom = M[d]
-            for n,op in zip(ijk, ops):
-                for i in range(1, n+1):
-                    atom = op(atom)
-            args.append(atom)
+        args = []
+        for d in range(dim):
+            for ijk in indices:
+                atom = M[d]
+                for n,op in zip(ijk, ops):
+                    for i in range(1, n+1):
+                        atom = op(atom)
+                args.append(atom)
 
-    args = [GeometryExpr(i) for i in args]
-    return Tuple(*args)
+        args = [GeometryExpr(i) for i in args]
+
+        args = Tuple(*args)
+        return Basic.__new__(cls, args)
+
+    @property
+    def arguments(self):
+        return self._args[0]

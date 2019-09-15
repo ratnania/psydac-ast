@@ -57,9 +57,9 @@ from nodes import Reduce
 from nodes import Reduction
 from nodes import construct_logical_expressions
 from nodes import GeometryAtom
+from nodes import GeometryExpressions
 from nodes import PhysicalGeometryValue
 from nodes import LogicalGeometryValue
-from nodes import construct_geometry_expressions
 from nodes import AtomicNode
 from nodes import MatrixLocalBasis
 from nodes import CoefficientBasis
@@ -340,12 +340,12 @@ def test_global_quad_basis_span_2d_2():
 #==============================================================================
 def test_loop_local_quad_geometry_2d_1():
     # ...
+    nderiv = 1
     stmts = []
-    geo_expr = construct_geometry_expressions(M, nderiv=1)
-    loop  = Loop((l_quad, *geo_expr), index_quad, stmts)
+    loop  = Loop((l_quad, GeometryExpressions(M, nderiv)), index_quad, stmts)
     # ...
 
-    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
+    settings = {'dim': domain.dim, 'nderiv': nderiv, 'mapping': M}
     _parse = lambda expr: parse(expr, settings=settings)
 
     stmt = _parse(loop)
@@ -386,7 +386,7 @@ def test_eval_field_2d_1():
     print()
 
 #==============================================================================
-def test_global_quad_basis_span_2d_vector():
+def test_global_quad_basis_span_2d_vector_1():
     # ...
     nderiv = 2
     stmts = construct_logical_expressions(v, nderiv)
@@ -422,7 +422,44 @@ def test_global_quad_basis_span_2d_vector():
     print()
 
 #==============================================================================
-def test_global_quad_basis_span_2d_matrix():
+def test_global_quad_basis_span_2d_vector_2():
+    # ...
+    nderiv = 1
+    stmts = construct_logical_expressions(v, nderiv)
+
+#    expressions = [dx(v), v]  # TODO Wrong result
+    expressions = [dx(v), dy(v)]
+    stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ... case with mapping <> identity
+    loop  = Loop((l_quad, a_basis, GeometryExpressions(M, nderiv)), index_quad, stmts)
+    # ...
+
+    # ... loop over tests
+    stmts = [loop]
+    loop  = Loop(l_basis_v, index_dof_test, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', ComputePhysicalBasis(dx(v)*cos(x+y)), ElementOf(l_vec), loop)
+    # ...
+
+    # ...
+    stmts = [loop]
+    loop  = Loop((g_quad, g_basis_v, g_span), index_element, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', l_vec, g_vec, loop)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv, 'mapping': M})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_quad_basis_span_2d_matrix_1():
     # ...
     nderiv = 2
     stmts = construct_logical_expressions(u, nderiv)
@@ -463,6 +500,47 @@ def test_global_quad_basis_span_2d_matrix():
     print()
 
 #==============================================================================
+def test_global_quad_basis_span_2d_matrix_2():
+    # ...
+    nderiv = 1
+    stmts = construct_logical_expressions(u, nderiv)
+
+    expressions = [dx(v), dy(v), dx(u), dy(u)]
+    stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    loop  = Loop((l_quad, a_basis, GeometryExpressions(M, nderiv)), index_quad, stmts)
+    # ...
+
+    # ... loop over trials
+    stmts = [loop]
+    loop  = Loop(l_basis, index_dof_trial, stmts)
+    # ...
+
+    # ... loop over tests
+    stmts = [loop]
+    loop  = Loop(l_basis_v, index_dof_test, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', ComputePhysicalBasis(dx(u)*dx(v)), ElementOf(l_mat), loop)
+    # ...
+
+    # ...
+    stmts = [loop]
+    loop  = Loop((g_quad, g_basis, g_basis_v, g_span), index_element, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', l_mat, g_mat, loop)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv, 'mapping': M})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
 # CLEAN UP SYMPY NAMESPACE
 #==============================================================================
 
@@ -476,9 +554,11 @@ def teardown_function():
 
 
 #==============================================================================
-#test_global_quad_basis_span_2d_vector()
-#test_global_quad_basis_span_2d_matrix()
-#import sys; sys.exit(0)
+#test_global_quad_basis_span_2d_vector_1()
+#test_global_quad_basis_span_2d_vector_2()
+test_global_quad_basis_span_2d_matrix_1()
+test_global_quad_basis_span_2d_matrix_2()
+import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()
@@ -492,8 +572,10 @@ test_global_quad_span_2d_1()
 test_global_quad_basis_span_2d_1()
 test_global_quad_basis_span_2d_2()
 test_eval_field_2d_1()
-test_global_quad_basis_span_2d_vector()
-test_global_quad_basis_span_2d_matrix()
+test_global_quad_basis_span_2d_vector_1()
+test_global_quad_basis_span_2d_vector_2()
+test_global_quad_basis_span_2d_matrix_1()
+test_global_quad_basis_span_2d_matrix_2()
 test_loop_local_quad_geometry_2d_1()
 #import sys; sys.exit(0)
 
