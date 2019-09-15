@@ -38,7 +38,7 @@ from nodes import length_dof, length_dof_test, length_dof_trial
 from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
-from nodes import Accumulate
+from nodes import Reduction
 from nodes import TensorIteration
 from nodes import TensorIterator
 from nodes import TensorGenerator
@@ -428,7 +428,7 @@ class Parser(object):
         return target
 
     # ....................................................
-    def _visit_Accumulate(self, expr, **kwargs):
+    def _visit_Reduction(self, expr, **kwargs):
         op   = expr.op
         lhs  = expr.lhs
         expr = expr.expr
@@ -924,10 +924,6 @@ class Parser(object):
         if p_iterations:
             p_inits = [self._visit(i) for i in p_iterations]
         # ...
-
-        # check if there is an accumulation
-        # TODO init accumulation vars
-#        accumulations = expr.stmts.atoms(Accumulate)
 
         inits = t_inits
 

@@ -53,7 +53,7 @@ from nodes import index_dof, index_dof_test, index_dof_trial
 #from nodes import ComputeLogical
 from nodes import ComputePhysicalBasis
 from nodes import ComputeLogicalBasis
-from nodes import Accumulate
+from nodes import Reduction
 from nodes import construct_logical_expressions
 from nodes import GeometryAtom
 from nodes import PhysicalGeometryValue
@@ -355,7 +355,7 @@ def test_global_quad_basis_span_2d_2():
     # ...
 
     # ...
-    stmts  += [Accumulate('+', ComputePhysicalBasis(dx(u)*dx(v)))]
+    stmts  += [Reduction('+', ComputePhysicalBasis(dx(u)*dx(v)))]
     # ...
 
     # ...
@@ -399,7 +399,7 @@ def test_global_quad_basis_span_2d_matrix():
     # ...
 
     # ...
-    stmts += [Accumulate('+',
+    stmts += [Reduction('+',
                          ComputePhysicalBasis(dx(u)*dx(v)),
                          ElementOf(l_mat))]
     # ...
@@ -428,7 +428,7 @@ def test_global_quad_basis_span_2d_matrix():
 
     # ...
     stmts = [loop]
-    stmts += [Accumulate('+',
+    stmts += [Reduction('+',
                          l_mat,
                          g_mat)]
 
@@ -461,7 +461,7 @@ def test_global_quad_basis_span_2d_vector():
 
     # ...
     x,y = symbols('x, y')
-    stmts += [Accumulate('+',
+    stmts += [Reduction('+',
                          ComputePhysicalBasis(dx(u)*cos(x+y)),
                          ElementOf(l_vec))]
     # ...
@@ -483,7 +483,7 @@ def test_global_quad_basis_span_2d_vector():
 
     # ...
     stmts = [loop]
-    stmts += [Accumulate('+',
+    stmts += [Reduction('+',
                          l_vec,
                          g_vec)]
 
@@ -579,9 +579,9 @@ def teardown_function():
 
 
 #==============================================================================
-#test_global_quad_basis_span_2d_vector()
+test_global_quad_basis_span_2d_vector()
 #test_global_quad_basis_span_2d_matrix()
-#import sys; sys.exit(0)
+import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()

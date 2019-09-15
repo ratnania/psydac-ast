@@ -560,7 +560,7 @@ class ComputeLogicalBasis(ComputeLogical):
     pass
 
 #==============================================================================
-class Accumulate(Basic):
+class Reduction(Basic):
     """
     """
     def __new__(cls, op, expr, lhs=None):
