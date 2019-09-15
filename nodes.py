@@ -731,6 +731,24 @@ class GeometryAtom(AtomicNode):
     def atom(self):
         return self._atom
 
+#==============================================================================
+class GeometryExpr(Basic):
+    """
+    """
+    def __new__(cls, expr):
+        # TODO assert on expr
+        atom = GeometryAtom(expr)
+        expr = MatrixQuadrature(expr)
+
+        return Basic.__new__(cls, atom, expr)
+
+    @property
+    def atom(self):
+        return self._args[0]
+
+    @property
+    def expr(self):
+        return self._args[1]
 
 #==============================================================================
 class Loop(BaseNode):
@@ -810,6 +828,10 @@ class Loop(BaseNode):
                 generator += [ProductGenerator(a, index)]
                 element = CoefficientBasis(a.target)
 
+            elif isinstance(a, GeometryExpr):
+                generator += [ProductGenerator(a.expr, index)]
+                element = a.atom
+
             else:
                 raise TypeError('{} not available'.format(type(a)))
             # ...
@@ -852,6 +874,9 @@ class Loop(BaseNode):
                 iterator  += [TensorIterator(element)]
 
             elif isinstance(element, CoefficientBasis):
+                iterator  += [ProductIterator(element)]
+
+            elif isinstance(element, GeometryAtom):
                 iterator  += [ProductIterator(element)]
 
             else:
@@ -998,7 +1023,7 @@ def construct_logical_expressions(u, nderiv):
     return [ComputeLogicalBasis(i) for i in args]
 
 #==============================================================================
-def construct_geometry_iter_gener(M, nderiv):
+def construct_geometry_expressions(M, nderiv):
     dim = M.rdim
 
     ops = [dx1, dx2, dx3][:dim]
@@ -1018,9 +1043,5 @@ def construct_geometry_iter_gener(M, nderiv):
                     atom = op(atom)
             args.append(atom)
 
-    iterators   = [ProductIterator(GeometryAtom(i))
-                   for i in args]
-    generators  = [ProductGenerator(MatrixQuadrature(i), index_quad)
-                   for i in args]
-
-    return iterators, generators
+    args = [GeometryExpr(i) for i in args]
+    return Tuple(*args)

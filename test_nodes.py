@@ -59,7 +59,7 @@ from nodes import construct_logical_expressions
 from nodes import GeometryAtom
 from nodes import PhysicalGeometryValue
 from nodes import LogicalGeometryValue
-from nodes import construct_geometry_iter_gener
+from nodes import construct_geometry_expressions
 from nodes import AtomicNode
 from nodes import MatrixLocalBasis
 from nodes import CoefficientBasis
@@ -338,24 +338,21 @@ def test_global_quad_basis_span_2d_2():
     print()
 
 #==============================================================================
-#def test_loop_local_quad_geometry_2d_1():
-#    # ...
-#    stmts = []
-#    geo_iterators, geo_generators = construct_geometry_iter_gener(M, nderiv=1)
-#
-#    iterator  = [TensorIterator(quad)] + geo_iterators
-#    generator = [TensorGenerator(l_quad, index_quad)] + geo_generators
-#    loop      = Loop(iterator, generator, stmts)
-#    # ...
-#
-#    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
-#    _parse = lambda expr: parse(expr, settings=settings)
-#
-#    stmt = _parse(loop)
-#    print()
-#    print(pycode(stmt))
-#
-#    print()
+def test_loop_local_quad_geometry_2d_1():
+    # ...
+    stmts = []
+    geo_expr = construct_geometry_expressions(M, nderiv=1)
+    loop  = Loop((l_quad, *geo_expr), index_quad, stmts)
+    # ...
+
+    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
+    _parse = lambda expr: parse(expr, settings=settings)
+
+    stmt = _parse(loop)
+    print()
+    print(pycode(stmt))
+
+    print()
 
 #==============================================================================
 def test_eval_field_2d_1():
@@ -484,21 +481,21 @@ def teardown_function():
 #import sys; sys.exit(0)
 
 # tests without assert
-#test_loop_local_quad_2d_1()
-#test_loop_local_dof_quad_2d_1()
-#test_loop_local_dof_quad_2d_2()
-#test_loop_local_dof_quad_2d_3()
-#test_loop_local_dof_quad_2d_4()
-#test_loop_global_local_quad_2d_1()
-#test_global_span_2d_1()
-#test_global_quad_span_2d_1()
-#test_global_quad_basis_span_2d_1()
-#test_global_quad_basis_span_2d_2()
-#test_eval_field_2d_1()
-#test_global_quad_basis_span_2d_vector()
-#test_global_quad_basis_span_2d_matrix()
-######test_loop_local_quad_geometry_2d_1()
-import sys; sys.exit(0)
+test_loop_local_quad_2d_1()
+test_loop_local_dof_quad_2d_1()
+test_loop_local_dof_quad_2d_2()
+test_loop_local_dof_quad_2d_3()
+test_loop_local_dof_quad_2d_4()
+test_loop_global_local_quad_2d_1()
+test_global_span_2d_1()
+test_global_quad_span_2d_1()
+test_global_quad_basis_span_2d_1()
+test_global_quad_basis_span_2d_2()
+test_eval_field_2d_1()
+test_global_quad_basis_span_2d_vector()
+test_global_quad_basis_span_2d_matrix()
+test_loop_local_quad_geometry_2d_1()
+#import sys; sys.exit(0)
 
 # tests with assert
 test_basis_atom_2d_1()
