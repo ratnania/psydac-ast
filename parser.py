@@ -47,7 +47,10 @@ from nodes import ProductIterator
 from nodes import ProductGenerator
 from nodes import StencilMatrixLocalBasis
 from nodes import StencilVectorLocalBasis
+from nodes import StencilMatrixGlobalBasis
+from nodes import StencilVectorGlobalBasis
 from nodes import TensorQuadratureTestBasis, TensorQuadratureTrialBasis
+from nodes import Span
 
 
 #==============================================================================
@@ -429,10 +432,67 @@ class Parser(object):
         op   = expr.op
         lhs  = expr.lhs
         expr = expr.expr
-        if not( lhs is None ):
-            lhs = self._visit(lhs)
 
-        return self._visit(expr, op=op, lhs=lhs)
+        if isinstance(lhs, StencilMatrixGlobalBasis):
+            dim  = self.dim
+            rank = lhs.rank
+            pads = lhs.pads
+
+            lhs  = self._visit(lhs, **kwargs)
+            rhs  = self._visit(expr, **kwargs)
+
+            pads    = self._visit(pads)
+            degrees = self._visit(length_dof_test)
+
+            # TODO improve
+            spans   = self._visit(Span())
+            spans   = list(zip(*spans))
+            spans   = spans[0]
+
+            lhs_starts = [spans[i]+pads[i]-degrees[i] for i in range(dim)]
+            lhs_ends   = [spans[i]+pads[i]+1          for i in range(dim)]
+
+            lhs_slices  = [Slice(s, e) for s,e in zip(lhs_starts, lhs_ends)]
+            lhs_slices += [Slice(None, None)]*dim
+            rhs_slices  = [Slice(None, None)]*rank
+
+            lhs = lhs[lhs_slices]
+            rhs = rhs[rhs_slices]
+
+            return AugAssign(lhs, op, rhs)
+
+        elif isinstance(lhs, StencilVectorGlobalBasis):
+            dim  = self.dim
+            rank = lhs.rank
+            pads = lhs.pads
+
+            lhs  = self._visit(lhs, **kwargs)
+            rhs  = self._visit(expr, **kwargs)
+
+            pads    = self._visit(pads)
+            degrees = self._visit(length_dof_test)
+
+            # TODO improve
+            spans   = self._visit(Span())
+            spans   = list(zip(*spans))
+            spans   = spans[0]
+
+            lhs_starts = [spans[i]+pads[i]-degrees[i] for i in range(dim)]
+            lhs_ends   = [spans[i]+pads[i]+1          for i in range(dim)]
+
+            lhs_slices = [Slice(s, e) for s,e in zip(lhs_starts, lhs_ends)]
+            rhs_slices = [Slice(None, None)]*rank
+
+            lhs = lhs[lhs_slices]
+            rhs = rhs[rhs_slices]
+
+            return AugAssign(lhs, op, rhs)
+
+        else:
+            if not( lhs is None ):
+                lhs = self._visit(lhs)
+
+            return self._visit(expr, op=op, lhs=lhs)
 
     # ....................................................
     def _visit_ComputeLogical(self, expr, op=None, lhs=None, **kwargs):
@@ -608,6 +668,26 @@ class Parser(object):
 
         name = random_string( 6 )
         name = 'l_vec_{}'.format(name)
+
+        return IndexedVariable(name, dtype='real', rank=rank)
+
+    # ....................................................
+    def _visit_StencilMatrixGlobalBasis(self, expr, **kwargs):
+        pads = expr.pads
+        rank = expr.rank
+
+        name = random_string( 6 )
+        name = 'g_mat_{}'.format(name)
+
+        return IndexedVariable(name, dtype='real', rank=rank)
+
+    # ....................................................
+    def _visit_StencilVectorGlobalBasis(self, expr, **kwargs):
+        pads = expr.pads
+        rank = expr.rank
+
+        name = random_string( 6 )
+        name = 'g_vec_{}'.format(name)
 
         return IndexedVariable(name, dtype='real', rank=rank)
 

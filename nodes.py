@@ -433,6 +433,48 @@ class StencilVectorLocalBasis(MatrixNode):
         return self._args[1]
 
 #==============================================================================
+class StencilMatrixGlobalBasis(MatrixNode):
+    """
+    used to describe local dof over an element as a stencil matrix
+    """
+    def __new__(cls, pads):
+        if not isinstance(pads, (list, tuple, Tuple)):
+            raise TypeError('Expecting an iterable')
+
+        pads = Tuple(*pads)
+        rank = 2*len(pads)
+        return Basic.__new__(cls, pads, rank)
+
+    @property
+    def pads(self):
+        return self._args[0]
+
+    @property
+    def rank(self):
+        return self._args[1]
+
+#==============================================================================
+class StencilVectorGlobalBasis(MatrixNode):
+    """
+    used to describe local dof over an element as a stencil vector
+    """
+    def __new__(cls, pads):
+        if not isinstance(pads, (list, tuple, Tuple)):
+            raise TypeError('Expecting an iterable')
+
+        pads = Tuple(*pads)
+        rank = len(pads)
+        return Basic.__new__(cls, pads, rank)
+
+    @property
+    def pads(self):
+        return self._args[0]
+
+    @property
+    def rank(self):
+        return self._args[1]
+
+#==============================================================================
 class GlobalSpan(ArrayNode):
     """
     """
@@ -453,9 +495,10 @@ class GlobalSpan(ArrayNode):
 class Span(ScalarNode):
     """
     """
-    def __new__(cls, target):
-        if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
-            raise TypeError('Expecting a scalar/vector test function')
+    def __new__(cls, target=None):
+        if not( target is None ):
+            if not isinstance(target, (ScalarTestFunction, VectorTestFunction)):
+                raise TypeError('Expecting a scalar/vector test function')
 
         return Basic.__new__(cls, target)
 

@@ -64,6 +64,8 @@ from nodes import MatrixLocalBasis
 from nodes import CoefficientBasis
 from nodes import StencilMatrixLocalBasis
 from nodes import StencilVectorLocalBasis
+from nodes import StencilMatrixGlobalBasis
+from nodes import StencilVectorGlobalBasis
 from nodes import ElementOf
 
 from parser import parse
@@ -95,6 +97,7 @@ basis_v   = TensorTestBasis(v)
 
 g_span  = GlobalSpan(u)
 span    = Span(u)
+
 coeff   = CoefficientBasis(u)
 l_coeff = MatrixLocalBasis(u)
 
@@ -102,6 +105,8 @@ l_coeff = MatrixLocalBasis(u)
 pads    = symbols('p1, p2, p3')[:domain.dim]
 l_mat   = StencilMatrixLocalBasis(pads)
 l_vec   = StencilVectorLocalBasis(pads)
+g_mat   = StencilMatrixGlobalBasis(pads)
+g_vec   = StencilVectorGlobalBasis(pads)
 # ...
 
 #==============================================================================
@@ -423,6 +428,10 @@ def test_global_quad_basis_span_2d_matrix():
 
     # ...
     stmts = [loop]
+    stmts += [Accumulate('+',
+                         l_mat,
+                         g_mat)]
+
     iterator  = (TensorIterator(l_quad),
                  TensorIterator(l_basis),
                  TensorIterator(span),
@@ -474,6 +483,10 @@ def test_global_quad_basis_span_2d_vector():
 
     # ...
     stmts = [loop]
+    stmts += [Accumulate('+',
+                         l_vec,
+                         g_vec)]
+
     iterator  = (TensorIterator(l_quad),
                  TensorIterator(l_basis),
                  TensorIterator(span),
