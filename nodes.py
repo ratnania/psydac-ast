@@ -738,31 +738,129 @@ class Loop(BaseNode):
     class to describe a loop of an iterator over a generator.
     """
 
-    def __new__(cls, iterator, generator, stmts=None):
-        # TODO stmts should not be optional
+    def __new__(cls, iterable, index, stmts=None):
         # ...
-        if isinstance(iterator, IteratorBase):
-            iterator = [iterator]
+        if not( isinstance(iterable, (list, tuple, Tuple)) ):
+            iterable = [iterable]
 
-        if not( isinstance(iterator, (list, tuple, Tuple)) ):
-            raise TypeError('Expecting an iterable')
+        iterable = Tuple(*iterable)
+        # ...
 
-        if not all([isinstance(i, IteratorBase) for i in iterator]):
-            raise TypeError('Expecting a list of Iterator')
+        # ...
+        if not( isinstance(index, IndexNode) ):
+            print(type(index), index)
+            raise TypeError('Expecting an index node')
+        # ...
 
+        # ... TODO - add assert w.r.t index type
+        #          - this should be splitted/moved somewhere
+        iterator = []
+        generator = []
+        for a in iterable:
+            # ... create generator
+            if isinstance(a, GlobalTensorQuadrature):
+                generator += [TensorGenerator(a, index)]
+                element = LocalTensorQuadrature()
+
+            elif isinstance(a, LocalTensorQuadrature):
+                generator += [TensorGenerator(a, index)]
+                element = TensorQuadrature()
+
+            elif isinstance(a, GlobalTensorQuadratureTrialBasis):
+                generator += [TensorGenerator(a, index)]
+                element = LocalTensorQuadratureTrialBasis(a.target)
+
+            elif isinstance(a, LocalTensorQuadratureTrialBasis):
+                generator += [TensorGenerator(a, index)]
+                element = TensorQuadratureTrialBasis(a.target)
+
+            elif isinstance(a, TensorQuadratureTrialBasis):
+                generator += [TensorGenerator(a, index)]
+                element = TensorTrialBasis(a.target)
+
+            elif isinstance(a, GlobalTensorQuadratureTestBasis):
+                generator += [TensorGenerator(a, index)]
+                element = LocalTensorQuadratureTestBasis(a.target)
+
+            elif isinstance(a, LocalTensorQuadratureTestBasis):
+                generator += [TensorGenerator(a, index)]
+                element = TensorQuadratureTestBasis(a.target)
+
+            elif isinstance(a, TensorQuadratureTestBasis):
+                generator += [TensorGenerator(a, index)]
+                element = TensorTestBasis(a.target)
+
+            elif isinstance(a, GlobalTensorQuadratureBasis):
+                generator += [TensorGenerator(a, index)]
+                element = LocalTensorQuadratureBasis(a.target)
+
+            elif isinstance(a, LocalTensorQuadratureBasis):
+                generator += [TensorGenerator(a, index)]
+                element = TensorQuadratureBasis(a.target)
+
+            elif isinstance(a, TensorQuadratureBasis):
+                generator += [TensorGenerator(a, index)]
+                element = TensorBasis(a.target)
+
+            elif isinstance(a, GlobalSpan):
+                generator += [TensorGenerator(a, index)]
+                element = Span(a.target)
+
+            elif isinstance(a, MatrixLocalBasis):
+                generator += [ProductGenerator(a, index)]
+                element = CoefficientBasis(a.target)
+
+            else:
+                raise TypeError('{} not available'.format(type(a)))
+            # ...
+
+            # ... create iterator
+            if isinstance(element, LocalTensorQuadrature):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, TensorQuadrature):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, LocalTensorQuadratureTrialBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, TensorQuadratureTrialBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, TensorTrialBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, LocalTensorQuadratureTestBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, TensorQuadratureTestBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, TensorTestBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, LocalTensorQuadratureBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, TensorQuadratureBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, TensorBasis):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, Span):
+                iterator  += [TensorIterator(element)]
+
+            elif isinstance(element, CoefficientBasis):
+                iterator  += [ProductIterator(element)]
+
+            else:
+                raise TypeError('{} not available'.format(type(element)))
+            # ...
+        # ...
+
+        # ...
         iterator = Tuple(*iterator)
-        # ...
-
-        # ...
-        if isinstance(generator, GeneratorBase):
-            generator = [generator]
-
-        if not( isinstance(generator, (list, tuple, Tuple)) ):
-            raise TypeError('Expecting an iterable')
-
-        if not all([isinstance(i, GeneratorBase) for i in generator]):
-            raise TypeError('Expecting a list of Generator')
-
         generator = Tuple(*generator)
         # ...
 
@@ -776,19 +874,31 @@ class Loop(BaseNode):
         stmts = Tuple(*stmts)
         # ...
 
-        return Basic.__new__(cls, iterator, generator, stmts)
+        obj = Basic.__new__(cls, iterable, index, stmts)
+        obj._iterator  = iterator
+        obj._generator = generator
+
+        return obj
 
     @property
-    def iterator(self):
+    def iterable(self):
         return self._args[0]
 
     @property
-    def generator(self):
+    def index(self):
         return self._args[1]
 
     @property
     def stmts(self):
         return self._args[2]
+
+    @property
+    def iterator(self):
+        return self._iterator
+
+    @property
+    def generator(self):
+        return self._generator
 
 #==============================================================================
 class TensorIteration(BaseNode):

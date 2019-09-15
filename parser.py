@@ -436,7 +436,7 @@ class Parser(object):
         loop = expr.loop
 
         stmts = list(loop.stmts) + [Reduction(op, rhs, lhs)]
-        loop  = Loop(loop.iterator, loop.generator, stmts=stmts)
+        loop  = Loop(loop.iterable, loop.index, stmts=stmts)
 
         return self._visit(loop, **kwargs)
 

@@ -161,9 +161,7 @@ def test_geometry_atom_2d_1():
 #==============================================================================
 def test_loop_local_quad_2d_1():
     stmts = []
-    iterator  = TensorIterator(quad)
-    generator = TensorGenerator(l_quad, index_quad)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(l_quad, index_quad, stmts)
 
     stmt = parse(loop, settings={'dim': domain.dim})
     print(pycode(stmt))
@@ -173,18 +171,12 @@ def test_loop_local_quad_2d_1():
 def test_loop_local_dof_quad_2d_1():
     # ...
     stmts = []
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(l_basis, index_dof, stmts)
     # ...
 
     # TODO bug when nderiv=0
@@ -201,18 +193,12 @@ def test_loop_local_dof_quad_2d_2():
     # ...
 
     # ...
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(l_basis, index_dof, stmts)
     # ...
 
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
@@ -228,18 +214,12 @@ def test_loop_local_dof_quad_2d_3():
     # ...
 
     # ...
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(l_basis, index_dof, stmts)
     # ...
 
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
@@ -260,18 +240,12 @@ def test_loop_local_dof_quad_2d_4():
     # ...
 
     # ...
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(l_basis, index_dof, stmts)
     # ...
 
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 3})
@@ -283,16 +257,12 @@ def test_loop_local_dof_quad_2d_4():
 def test_loop_global_local_quad_2d_1():
     # ...
     stmts = []
-    iterator  = TensorIterator(quad)
-    generator = TensorGenerator(l_quad, index_quad)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(l_quad, index_quad, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = TensorIterator(l_quad)
-    generator = TensorGenerator(g_quad, index_element)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(g_quad, index_element, stmts)
     # ...
 
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': 2})
@@ -303,9 +273,7 @@ def test_loop_global_local_quad_2d_1():
 def test_global_span_2d_1():
     # ...
     stmts = []
-    iterator  = TensorIterator(span)
-    generator = TensorGenerator(g_span, index_element)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(g_span, index_element, stmts)
     # ...
 
     # TODO do we need nderiv here?
@@ -317,11 +285,7 @@ def test_global_span_2d_1():
 def test_global_quad_span_2d_1():
     # ...
     stmts = []
-    iterator  = (TensorIterator(l_quad),
-                 TensorIterator(span))
-    generator = (TensorGenerator(g_quad, index_element),
-                 TensorGenerator(g_span, index_element))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((g_quad, g_span), index_element, stmts)
     # ...
 
     # TODO do we need nderiv here?
@@ -333,13 +297,7 @@ def test_global_quad_span_2d_1():
 def test_global_quad_basis_span_2d_1():
     # ...
     stmts = []
-    iterator  = (TensorIterator(l_quad),
-                 TensorIterator(l_basis),
-                 TensorIterator(span))
-    generator = (TensorGenerator(g_quad, index_element),
-                 TensorGenerator(g_basis, index_element),
-                 TensorGenerator(g_span, index_element))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((g_quad, g_basis, g_span), index_element, stmts)
     # ...
 
     # TODO do we need nderiv here?
@@ -362,29 +320,17 @@ def test_global_quad_basis_span_2d_2():
     # ...
 
     # ...
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof)
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop(l_basis, index_dof, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = (TensorIterator(l_quad),
-                 TensorIterator(l_basis),
-                 TensorIterator(span))
-    generator = (TensorGenerator(g_quad, index_element),
-                 TensorGenerator(g_basis, index_element),
-                 TensorGenerator(g_span, index_element))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((g_quad, g_basis, g_span), index_element, stmts)
     # ...
 
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
@@ -392,136 +338,24 @@ def test_global_quad_basis_span_2d_2():
     print()
 
 #==============================================================================
-def test_global_quad_basis_span_2d_matrix():
-    # ...
-    nderiv = 2
-    stmts = construct_logical_expressions(u, nderiv)
-
-    expressions = [dx(u), dx(dy(u)), dy(dy(u))]
-    stmts  += [ComputePhysicalBasis(i) for i in expressions]
-    # ...
-
-    # ...
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    # ... loop over trials
-    stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof_trial)
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    # ... loop over tests
-    stmts = [loop]
-    iterator  = TensorIterator(a_basis_v)
-    generator = TensorGenerator(l_basis_v, index_dof_test)
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    # ...
-    loop = Reduce('+', ComputePhysicalBasis(dx(u)*dx(v)), ElementOf(l_mat), loop)
-    # ...
-
-    # ...
-    stmts = [loop]
-    iterator  = (TensorIterator(l_quad),
-                 TensorIterator(l_basis),
-                 TensorIterator(span),
-                 TensorIterator(l_basis_v),
-                )
-    generator = (TensorGenerator(g_quad, index_element),
-                 TensorGenerator(g_basis, index_element),
-                 TensorGenerator(g_span, index_element),
-                 TensorGenerator(g_basis_v, index_element),
-                )
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    # ...
-    loop = Reduce('+', l_mat, g_mat, loop)
-    # ...
-
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
-    print(pycode(stmt))
-    print()
-
-#==============================================================================
-def test_global_quad_basis_span_2d_vector():
-    # ...
-    nderiv = 2
-    stmts = construct_logical_expressions(u, nderiv)
-
-    expressions = [dx(u), dx(dy(u)), dy(dy(u))]
-    stmts  += [ComputePhysicalBasis(i) for i in expressions]
-    # ...
-
-    # ...
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    # ... loop over tests
-    stmts = [loop]
-    iterator  = TensorIterator(a_basis_v)
-    generator = TensorGenerator(l_basis_v, index_dof_test)
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    # ...
-    loop = Reduce('+', ComputePhysicalBasis(dx(u)*cos(x+y)), ElementOf(l_vec), loop)
-    # ...
-
-    # ...
-    stmts = [loop]
-    iterator  = (TensorIterator(l_quad),
-                 TensorIterator(l_basis),
-                 TensorIterator(span),
-                 TensorIterator(l_basis_v),
-                )
-    generator = (TensorGenerator(g_quad, index_element),
-                 TensorGenerator(g_basis, index_element),
-                 TensorGenerator(g_span, index_element),
-                 TensorGenerator(g_basis_v, index_element),
-                )
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    # ...
-    loop = Reduce('+', l_vec, g_vec, loop)
-    # ...
-
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
-    print(pycode(stmt))
-    print()
-
-
-#==============================================================================
-def test_loop_local_quad_geometry_2d_1():
-    # ...
-    stmts = []
-    geo_iterators, geo_generators = construct_geometry_iter_gener(M, nderiv=1)
-
-    iterator  = [TensorIterator(quad)] + geo_iterators
-    generator = [TensorGenerator(l_quad, index_quad)] + geo_generators
-    loop      = Loop(iterator, generator, stmts)
-    # ...
-
-    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
-    _parse = lambda expr: parse(expr, settings=settings)
-
-    stmt = _parse(loop)
-    print()
-    print(pycode(stmt))
-
-    print()
+#def test_loop_local_quad_geometry_2d_1():
+#    # ...
+#    stmts = []
+#    geo_iterators, geo_generators = construct_geometry_iter_gener(M, nderiv=1)
+#
+#    iterator  = [TensorIterator(quad)] + geo_iterators
+#    generator = [TensorGenerator(l_quad, index_quad)] + geo_generators
+#    loop      = Loop(iterator, generator, stmts)
+#    # ...
+#
+#    settings = {'dim': domain.dim, 'nderiv': 1, 'mapping': M}
+#    _parse = lambda expr: parse(expr, settings=settings)
+#
+#    stmt = _parse(loop)
+#    print()
+#    print(pycode(stmt))
+#
+#    print()
 
 #==============================================================================
 def test_eval_field_2d_1():
@@ -541,20 +375,12 @@ def test_eval_field_2d_1():
 
     # ...
     stmts = body + stmts
-    iterator  = (TensorIterator(quad),
-                 TensorIterator(basis))
-    generator = (TensorGenerator(l_quad, index_quad),
-                 TensorGenerator(a_basis, index_quad))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
     # ...
 
     # ...
     stmts = [loop]
-    iterator  = (TensorIterator(a_basis),
-                 ProductIterator(coeff))
-    generator = (TensorGenerator(l_basis, index_dof),
-                 ProductGenerator(l_coeff, index_dof))
-    loop      = Loop(iterator, generator, stmts)
+    loop  = Loop((l_basis, l_coeff), index_dof, stmts)
     # ...
 
     # TODO do we need nderiv here?
@@ -562,6 +388,82 @@ def test_eval_field_2d_1():
     print(pycode(stmt))
     print()
 
+#==============================================================================
+def test_global_quad_basis_span_2d_vector():
+    # ...
+    nderiv = 2
+    stmts = construct_logical_expressions(v, nderiv)
+
+    expressions = [dx(v), dx(dy(v)), dy(dy(v))]
+    stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
+    # ...
+
+    # ... loop over tests
+    stmts = [loop]
+    loop  = Loop(l_basis_v, index_dof_test, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', ComputePhysicalBasis(dx(v)*cos(x+y)), ElementOf(l_vec), loop)
+    # ...
+
+    # ...
+    stmts = [loop]
+    loop  = Loop((g_quad, g_basis_v, g_span), index_element, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', l_vec, g_vec, loop)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_quad_basis_span_2d_matrix():
+    # ...
+    nderiv = 2
+    stmts = construct_logical_expressions(u, nderiv)
+
+    expressions = [dx(u), dx(dy(u)), dy(dy(u))]
+    stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    loop  = Loop((l_quad, a_basis), index_quad, stmts)
+    # ...
+
+    # ... loop over trials
+    stmts = [loop]
+    loop  = Loop(l_basis, index_dof_trial, stmts)
+    # ...
+
+    # ... loop over tests
+    stmts = [loop]
+    loop  = Loop(l_basis_v, index_dof_test, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', ComputePhysicalBasis(dx(u)*dx(v)), ElementOf(l_mat), loop)
+    # ...
+
+    # ...
+    stmts = [loop]
+    loop  = Loop((g_quad, g_basis, g_basis_v, g_span), index_element, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', l_mat, g_mat, loop)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    print(pycode(stmt))
+    print()
 
 #==============================================================================
 # CLEAN UP SYMPY NAMESPACE
@@ -578,24 +480,25 @@ def teardown_function():
 
 #==============================================================================
 #test_global_quad_basis_span_2d_vector()
-test_global_quad_basis_span_2d_matrix()
-import sys; sys.exit(0)
+#test_global_quad_basis_span_2d_matrix()
+#import sys; sys.exit(0)
 
 # tests without assert
-test_loop_local_quad_2d_1()
-test_loop_local_dof_quad_2d_1()
-test_loop_local_dof_quad_2d_2()
-test_loop_local_dof_quad_2d_3()
-test_loop_local_dof_quad_2d_4()
-test_loop_global_local_quad_2d_1()
-test_global_span_2d_1()
-test_global_quad_span_2d_1()
-test_global_quad_basis_span_2d_1()
-test_global_quad_basis_span_2d_2()
-test_loop_local_quad_geometry_2d_1()
-test_eval_field_2d_1()
-test_global_quad_basis_span_2d_vector()
-test_global_quad_basis_span_2d_matrix()
+#test_loop_local_quad_2d_1()
+#test_loop_local_dof_quad_2d_1()
+#test_loop_local_dof_quad_2d_2()
+#test_loop_local_dof_quad_2d_3()
+#test_loop_local_dof_quad_2d_4()
+#test_loop_global_local_quad_2d_1()
+#test_global_span_2d_1()
+#test_global_quad_span_2d_1()
+#test_global_quad_basis_span_2d_1()
+#test_global_quad_basis_span_2d_2()
+#test_eval_field_2d_1()
+#test_global_quad_basis_span_2d_vector()
+#test_global_quad_basis_span_2d_matrix()
+######test_loop_local_quad_geometry_2d_1()
+import sys; sys.exit(0)
 
 # tests with assert
 test_basis_atom_2d_1()
