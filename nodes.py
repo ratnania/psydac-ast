@@ -412,6 +412,27 @@ class StencilMatrixLocalBasis(MatrixNode):
         return self._args[1]
 
 #==============================================================================
+class StencilVectorLocalBasis(MatrixNode):
+    """
+    used to describe local dof over an element as a stencil vector
+    """
+    def __new__(cls, pads):
+        if not isinstance(pads, (list, tuple, Tuple)):
+            raise TypeError('Expecting an iterable')
+
+        pads = Tuple(*pads)
+        rank = len(pads)
+        return Basic.__new__(cls, pads, rank)
+
+    @property
+    def pads(self):
+        return self._args[0]
+
+    @property
+    def rank(self):
+        return self._args[1]
+
+#==============================================================================
 class GlobalSpan(ArrayNode):
     """
     """

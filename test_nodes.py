@@ -3,6 +3,7 @@
 from sympy import Symbol
 from sympy import Mul
 from sympy import symbols
+from sympy import cos
 
 from pyccel.ast import Assign
 from pyccel.ast import AugAssign
@@ -62,6 +63,7 @@ from nodes import AtomicNode
 from nodes import MatrixLocalBasis
 from nodes import CoefficientBasis
 from nodes import StencilMatrixLocalBasis
+from nodes import StencilVectorLocalBasis
 from nodes import ElementOf
 
 from parser import parse
@@ -99,6 +101,7 @@ l_coeff = MatrixLocalBasis(u)
 
 pads    = symbols('p1, p2, p3')[:domain.dim]
 l_mat   = StencilMatrixLocalBasis(pads)
+l_vec   = StencilVectorLocalBasis(pads)
 # ...
 
 #==============================================================================
@@ -404,14 +407,14 @@ def test_global_quad_basis_span_2d_matrix():
     loop      = Loop(iterator, generator, stmts)
     # ...
 
-    # ... loop over tests
+    # ... loop over trials
     stmts = [loop]
     iterator  = TensorIterator(a_basis)
     generator = TensorGenerator(l_basis, index_dof_trial)
     loop      = Loop(iterator, generator, stmts)
     # ...
 
-    # ... loop over trials
+    # ... loop over tests
     stmts = [loop]
     iterator  = TensorIterator(a_basis_v)
     generator = TensorGenerator(l_basis_v, index_dof_test)
@@ -448,9 +451,10 @@ def test_global_quad_basis_span_2d_vector():
     # ...
 
     # ...
+    x,y = symbols('x, y')
     stmts += [Accumulate('+',
-                         ComputePhysicalBasis(dx(u)*dx(v)),
-                         ElementOf(l_mat))]
+                         ComputePhysicalBasis(dx(u)*cos(x+y)),
+                         ElementOf(l_vec))]
     # ...
 
     # ...
@@ -461,10 +465,10 @@ def test_global_quad_basis_span_2d_vector():
     loop      = Loop(iterator, generator, stmts)
     # ...
 
-    # ...
+    # ... loop over tests
     stmts = [loop]
-    iterator  = TensorIterator(a_basis)
-    generator = TensorGenerator(l_basis, index_dof)
+    iterator  = TensorIterator(a_basis_v)
+    generator = TensorGenerator(l_basis_v, index_dof_test)
     loop      = Loop(iterator, generator, stmts)
     # ...
 
@@ -472,10 +476,14 @@ def test_global_quad_basis_span_2d_vector():
     stmts = [loop]
     iterator  = (TensorIterator(l_quad),
                  TensorIterator(l_basis),
-                 TensorIterator(span))
+                 TensorIterator(span),
+                 TensorIterator(l_basis_v),
+                )
     generator = (TensorGenerator(g_quad, index_element),
                  TensorGenerator(g_basis, index_element),
-                 TensorGenerator(g_span, index_element))
+                 TensorGenerator(g_span, index_element),
+                 TensorGenerator(g_basis_v, index_element),
+                )
     loop      = Loop(iterator, generator, stmts)
     # ...
 
@@ -575,6 +583,8 @@ test_global_quad_basis_span_2d_1()
 test_global_quad_basis_span_2d_2()
 test_loop_local_quad_geometry_2d_1()
 test_eval_field_2d_1()
+test_global_quad_basis_span_2d_vector()
+test_global_quad_basis_span_2d_matrix()
 
 # tests with assert
 test_basis_atom_2d_1()

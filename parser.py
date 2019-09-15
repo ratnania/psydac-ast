@@ -46,6 +46,7 @@ from nodes import ProductIteration
 from nodes import ProductIterator
 from nodes import ProductGenerator
 from nodes import StencilMatrixLocalBasis
+from nodes import StencilVectorLocalBasis
 from nodes import TensorQuadratureTestBasis, TensorQuadratureTrialBasis
 
 
@@ -579,6 +580,14 @@ class Parser(object):
 
             return target[indices]
 
+        elif isinstance(target, StencilVectorLocalBasis):
+            target = self._visit(target, **kwargs)
+
+            rows = self._visit(index_dof_test)
+            indices = list(rows)
+
+            return target[indices]
+
         else:
             raise NotImplementedError('TODO')
 
@@ -589,6 +598,16 @@ class Parser(object):
 
         name = random_string( 6 )
         name = 'l_mat_{}'.format(name)
+
+        return IndexedVariable(name, dtype='real', rank=rank)
+
+    # ....................................................
+    def _visit_StencilVectorLocalBasis(self, expr, **kwargs):
+        pads = expr.pads
+        rank = expr.rank
+
+        name = random_string( 6 )
+        name = 'l_vec_{}'.format(name)
 
         return IndexedVariable(name, dtype='real', rank=rank)
 
