@@ -53,6 +53,7 @@ from nodes import index_dof, index_dof_test, index_dof_trial
 #from nodes import ComputeLogical
 from nodes import ComputePhysicalBasis
 from nodes import ComputeLogicalBasis
+from nodes import Reduce
 from nodes import Reduction
 from nodes import construct_logical_expressions
 from nodes import GeometryAtom
@@ -107,6 +108,8 @@ l_mat   = StencilMatrixLocalBasis(pads)
 l_vec   = StencilVectorLocalBasis(pads)
 g_mat   = StencilMatrixGlobalBasis(pads)
 g_vec   = StencilVectorGlobalBasis(pads)
+
+x,y = symbols('x, y')
 # ...
 
 #==============================================================================
@@ -399,12 +402,6 @@ def test_global_quad_basis_span_2d_matrix():
     # ...
 
     # ...
-    stmts += [Reduction('+',
-                         ComputePhysicalBasis(dx(u)*dx(v)),
-                         ElementOf(l_mat))]
-    # ...
-
-    # ...
     iterator  = (TensorIterator(quad),
                  TensorIterator(basis))
     generator = (TensorGenerator(l_quad, index_quad),
@@ -427,11 +424,11 @@ def test_global_quad_basis_span_2d_matrix():
     # ...
 
     # ...
-    stmts = [loop]
-    stmts += [Reduction('+',
-                         l_mat,
-                         g_mat)]
+    loop = Reduce('+', ComputePhysicalBasis(dx(u)*dx(v)), ElementOf(l_mat), loop)
+    # ...
 
+    # ...
+    stmts = [loop]
     iterator  = (TensorIterator(l_quad),
                  TensorIterator(l_basis),
                  TensorIterator(span),
@@ -443,6 +440,10 @@ def test_global_quad_basis_span_2d_matrix():
                  TensorGenerator(g_basis_v, index_element),
                 )
     loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', l_mat, g_mat, loop)
     # ...
 
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
@@ -457,13 +458,6 @@ def test_global_quad_basis_span_2d_vector():
 
     expressions = [dx(u), dx(dy(u)), dy(dy(u))]
     stmts  += [ComputePhysicalBasis(i) for i in expressions]
-    # ...
-
-    # ...
-    x,y = symbols('x, y')
-    stmts += [Reduction('+',
-                         ComputePhysicalBasis(dx(u)*cos(x+y)),
-                         ElementOf(l_vec))]
     # ...
 
     # ...
@@ -482,11 +476,11 @@ def test_global_quad_basis_span_2d_vector():
     # ...
 
     # ...
-    stmts = [loop]
-    stmts += [Reduction('+',
-                         l_vec,
-                         g_vec)]
+    loop = Reduce('+', ComputePhysicalBasis(dx(u)*cos(x+y)), ElementOf(l_vec), loop)
+    # ...
 
+    # ...
+    stmts = [loop]
     iterator  = (TensorIterator(l_quad),
                  TensorIterator(l_basis),
                  TensorIterator(span),
@@ -498,6 +492,10 @@ def test_global_quad_basis_span_2d_vector():
                  TensorGenerator(g_basis_v, index_element),
                 )
     loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    loop = Reduce('+', l_vec, g_vec, loop)
     # ...
 
     stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
@@ -579,8 +577,8 @@ def teardown_function():
 
 
 #==============================================================================
-test_global_quad_basis_span_2d_vector()
-#test_global_quad_basis_span_2d_matrix()
+#test_global_quad_basis_span_2d_vector()
+test_global_quad_basis_span_2d_matrix()
 import sys; sys.exit(0)
 
 # tests without assert

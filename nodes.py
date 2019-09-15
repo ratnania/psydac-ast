@@ -580,6 +580,33 @@ class Reduction(Basic):
         return self._args[2]
 
 #==============================================================================
+class Reduce(Basic):
+    """
+    """
+    def __new__(cls, op, rhs, lhs, loop):
+        # TODO add verification on op = '-', '+', '*', '/'
+        if not isinstance(loop, Loop):
+            raise TypeError('Expecting a Loop')
+
+        return Basic.__new__(cls, op, rhs, lhs, loop)
+
+    @property
+    def op(self):
+        return self._args[0]
+
+    @property
+    def rhs(self):
+        return self._args[1]
+
+    @property
+    def lhs(self):
+        return self._args[2]
+
+    @property
+    def loop(self):
+        return self._args[3]
+
+#==============================================================================
 class ElementOf(Basic):
     """
     """

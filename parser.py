@@ -51,6 +51,7 @@ from nodes import StencilMatrixGlobalBasis
 from nodes import StencilVectorGlobalBasis
 from nodes import TensorQuadratureTestBasis, TensorQuadratureTrialBasis
 from nodes import Span
+from nodes import Loop
 
 
 #==============================================================================
@@ -426,6 +427,18 @@ class Parser(object):
             target = [target]
         target = list(zip(*target))
         return target
+
+    # ....................................................
+    def _visit_Reduce(self, expr, **kwargs):
+        op   = expr.op
+        lhs  = expr.lhs
+        rhs  = expr.rhs
+        loop = expr.loop
+
+        stmts = list(loop.stmts) + [Reduction(op, rhs, lhs)]
+        loop  = Loop(loop.iterator, loop.generator, stmts=stmts)
+
+        return self._visit(loop, **kwargs)
 
     # ....................................................
     def _visit_Reduction(self, expr, **kwargs):
