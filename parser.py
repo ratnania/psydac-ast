@@ -33,7 +33,8 @@ from nodes import LocalTensorQuadrature
 from nodes import LocalTensorQuadratureBasis
 from nodes import TensorQuadratureBasis
 from nodes import index_quad, length_quad
-from nodes import index_dof, length_dof
+from nodes import index_dof, index_dof_test, index_dof_trial
+from nodes import length_dof, length_dof_test, length_dof_trial
 from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
@@ -45,7 +46,7 @@ from nodes import ProductIteration
 from nodes import ProductIterator
 from nodes import ProductGenerator
 from nodes import StencilMatrixLocalBasis
-from nodes import AdjointOf
+from nodes import TensorQuadratureTestBasis, TensorQuadratureTrialBasis
 
 
 #==============================================================================
@@ -58,9 +59,11 @@ def random_string( n ):
     return ''.join( selector.choice( chars ) for _ in range( n ) )
 
 #==============================================================================
-_length_of_registery = {index_quad:    length_quad,
-                        index_dof:     length_dof,
-                        index_element: length_element, }
+_length_of_registery = {index_quad:      length_quad,
+                        index_dof:       length_dof,
+                        index_dof_test:  length_dof_test,
+                        index_dof_trial: length_dof_trial,
+                        index_element:   length_element, }
 
 #==============================================================================
 class Parser(object):
@@ -328,13 +331,28 @@ class Parser(object):
     def _visit_TensorQuadratureBasis(self, expr, **kwargs):
         # TODO add label
         # TODO add ln
-        dim = self.dim
+        dim  = self.dim
         rank = expr.rank
-        ln = 1
-        if ln > 1:
-            names = 'array_basis_1:%s(1:%s)'%(dim+1,ln+1)
+        ln   = 1
+
+        # ... TODO improve
+        if isinstance(expr, TensorQuadratureTestBasis):
+            if ln > 1:
+                names = 'test_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'test_basis_1:%s'%(dim+1)
+
+        elif isinstance(expr, TensorQuadratureTrialBasis):
+            if ln > 1:
+                names = 'trial_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'trial_basis_1:%s'%(dim+1)
         else:
-            names = 'array_basis_1:%s'%(dim+1)
+            if ln > 1:
+                names = 'array_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'array_basis_1:%s'%(dim+1)
+        # ...
 
         target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
         if not isinstance(target[0], (tuple, list, Tuple)):
@@ -546,11 +564,6 @@ class Parser(object):
         return SymbolicExpr(expr)
 
     # ....................................................
-    def _visit_AdjointOf(self, expr, **kwargs):
-        target = expr.target
-        return self._visit(target, adjoint=True, **kwargs)
-
-    # ....................................................
     def _visit_ElementOf(self, expr, **kwargs):
         dim    = self.dim
         target = expr.target
@@ -559,8 +572,8 @@ class Parser(object):
             rank   = target.rank
             target = self._visit(target, **kwargs)
 
-            rows = self._visit(index_dof)
-            cols = self._visit(AdjointOf(index_dof))
+            rows = self._visit(index_dof_test)
+            cols = self._visit(index_dof_trial)
             pads = self._visit(pads)
             indices = list(rows) + [cols[i]+pads[i]-rows[i] for i in range(dim)]
 
@@ -617,13 +630,19 @@ class Parser(object):
         return symbols('i_quad_1:%d'%(dim+1))
 
     # ....................................................
-    def _visit_IndexDof(self, expr, adjoint=False, **kwargs):
+    def _visit_IndexDof(self, expr, **kwargs):
         dim = self.dim
-        if adjoint:
-            return symbols('j_basis_1:%d'%(dim+1))
+        return symbols('i_basis_1:%d'%(dim+1))
 
-        else:
-            return symbols('i_basis_1:%d'%(dim+1))
+    # ....................................................
+    def _visit_IndexDofTrial(self, expr, **kwargs):
+        dim = self.dim
+        return symbols('j_basis_1:%d'%(dim+1))
+
+    # ....................................................
+    def _visit_IndexDofTest(self, expr, **kwargs):
+        dim = self.dim
+        return symbols('i_basis_1:%d'%(dim+1))
 
     # ....................................................
     def _visit_IndexDerivative(self, expr, **kwargs):
@@ -644,6 +663,18 @@ class Parser(object):
         # TODO must be p+1
         dim = self.dim
         return symbols('p1:%d'%(dim+1))
+
+    # ....................................................
+    def _visit_LengthDofTest(self, expr, **kwargs):
+        # TODO must be p+1
+        dim = self.dim
+        return symbols('test_p1:%d'%(dim+1))
+
+    # ....................................................
+    def _visit_LengthDofTrial(self, expr, **kwargs):
+        # TODO must be p+1
+        dim = self.dim
+        return symbols('trial_p1:%d'%(dim+1))
 
     # ....................................................
     def _visit_RankDimension(self, expr, **kwargs):

@@ -40,13 +40,21 @@ class IndexQuadrature(IndexNode):
 class IndexDof(IndexNode):
     pass
 
+class IndexDofTrial(IndexNode):
+    pass
+
+class IndexDofTest(IndexNode):
+    pass
+
 class IndexDerivative(IndexNode):
     pass
 
-index_element = IndexElement()
-index_quad    = IndexQuadrature()
-index_dof     = IndexDof()
-index_deriv   = IndexDerivative()
+index_element   = IndexElement()
+index_quad      = IndexQuadrature()
+index_dof       = IndexDof()
+index_dof_trial = IndexDofTrial()
+index_dof_test  = IndexDofTest()
+index_deriv     = IndexDerivative()
 
 #==============================================================================
 class LengthNode(with_metaclass(Singleton, Basic)):
@@ -62,9 +70,17 @@ class LengthQuadrature(LengthNode):
 class LengthDof(LengthNode):
     pass
 
-length_element = LengthElement()
-length_quad    = LengthQuadrature()
-length_dof     = LengthDof()
+class LengthDofTrial(LengthNode):
+    pass
+
+class LengthDofTest(LengthNode):
+    pass
+
+length_element   = LengthElement()
+length_quad      = LengthQuadrature()
+length_dof       = LengthDof()
+length_dof_trial = LengthDofTrial()
+length_dof_test  = LengthDofTest()
 
 #==============================================================================
 class RankNode(with_metaclass(Singleton, Basic)):
@@ -326,6 +342,40 @@ class TensorBasis(CoefficientBasis):
     pass
 
 #==============================================================================
+class GlobalTensorQuadratureTestBasis(GlobalTensorQuadratureBasis):
+    _positions = {index_quad: 3, index_deriv: 2, index_dof_test: 1, index_element: 0}
+
+#==============================================================================
+class LocalTensorQuadratureTestBasis(LocalTensorQuadratureBasis):
+    _positions = {index_quad: 2, index_deriv: 1, index_dof_test: 0}
+    _free_positions = [index_dof_test]
+
+#==============================================================================
+class TensorQuadratureTestBasis(TensorQuadratureBasis):
+    pass
+
+#==============================================================================
+class TensorTestBasis(TensorBasis):
+    pass
+
+#==============================================================================
+class GlobalTensorQuadratureTrialBasis(GlobalTensorQuadratureBasis):
+    _positions = {index_quad: 3, index_deriv: 2, index_dof_trial: 1, index_element: 0}
+
+#==============================================================================
+class LocalTensorQuadratureTrialBasis(LocalTensorQuadratureBasis):
+    _positions = {index_quad: 2, index_deriv: 1, index_dof_trial: 0}
+    _free_positions = [index_dof_trial]
+
+#==============================================================================
+class TensorQuadratureTrialBasis(TensorQuadratureBasis):
+    pass
+
+#==============================================================================
+class TensorTrialBasis(TensorBasis):
+    pass
+
+#==============================================================================
 class MatrixLocalBasis(MatrixNode):
     """
     used to describe local dof over an element
@@ -470,20 +520,6 @@ class ElementOf(Basic):
     """
     """
     def __new__(cls, target):
-        return Basic.__new__(cls, target)
-
-    @property
-    def target(self):
-        return self._args[0]
-
-#==============================================================================
-class AdjointOf(Basic):
-    """
-    """
-    def __new__(cls, target):
-        if not isinstance(target, IndexDof):
-            raise NotImplementedError('TODO')
-
         return Basic.__new__(cls, target)
 
     @property

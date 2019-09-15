@@ -32,6 +32,14 @@ from nodes import GlobalTensorQuadratureBasis
 from nodes import LocalTensorQuadratureBasis
 from nodes import TensorQuadratureBasis
 from nodes import TensorBasis
+from nodes import GlobalTensorQuadratureTestBasis
+from nodes import LocalTensorQuadratureTestBasis
+from nodes import TensorQuadratureTestBasis
+from nodes import TensorTestBasis
+from nodes import GlobalTensorQuadratureTrialBasis
+from nodes import LocalTensorQuadratureTrialBasis
+from nodes import TensorQuadratureTrialBasis
+from nodes import TensorTrialBasis
 from nodes import GlobalSpan
 from nodes import Span
 from nodes import BasisAtom
@@ -39,7 +47,7 @@ from nodes import PhysicalBasisValue
 from nodes import LogicalBasisValue
 from nodes import index_element
 from nodes import index_quad
-from nodes import index_dof
+from nodes import index_dof, index_dof_test, index_dof_trial
 #from nodes import ComputePhysical
 #from nodes import ComputeLogical
 from nodes import ComputePhysicalBasis
@@ -73,14 +81,21 @@ element = Element()
 g_quad  = GlobalTensorQuadrature()
 l_quad  = LocalTensorQuadrature()
 quad    = TensorQuadrature()
-g_basis = GlobalTensorQuadratureBasis(u)
-l_basis = LocalTensorQuadratureBasis(u)
-a_basis = TensorQuadratureBasis(u)
-basis   = TensorBasis(u)
+
+g_basis   = GlobalTensorQuadratureTrialBasis(u)
+l_basis   = LocalTensorQuadratureTrialBasis(u)
+a_basis   = TensorQuadratureTrialBasis(u)
+basis     = TensorTrialBasis(u)
+g_basis_v = GlobalTensorQuadratureTestBasis(v)
+l_basis_v = LocalTensorQuadratureTestBasis(v)
+a_basis_v = TensorQuadratureTestBasis(v)
+basis_v   = TensorTestBasis(v)
+
 g_span  = GlobalSpan(u)
 span    = Span(u)
 coeff   = CoefficientBasis(u)
 l_coeff = MatrixLocalBasis(u)
+
 
 pads    = symbols('p1, p2, p3')[:domain.dim]
 l_mat   = StencilMatrixLocalBasis(pads)
@@ -366,7 +381,64 @@ def test_global_quad_basis_span_2d_2():
     print()
 
 #==============================================================================
-def test_global_quad_basis_span_2d_3():
+def test_global_quad_basis_span_2d_matrix():
+    # ...
+    nderiv = 2
+    stmts = construct_logical_expressions(u, nderiv)
+
+    expressions = [dx(u), dx(dy(u)), dy(dy(u))]
+    stmts  += [ComputePhysicalBasis(i) for i in expressions]
+    # ...
+
+    # ...
+    stmts += [Accumulate('+',
+                         ComputePhysicalBasis(dx(u)*dx(v)),
+                         ElementOf(l_mat))]
+    # ...
+
+    # ...
+    iterator  = (TensorIterator(quad),
+                 TensorIterator(basis))
+    generator = (TensorGenerator(l_quad, index_quad),
+                 TensorGenerator(a_basis, index_quad))
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ... loop over tests
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis)
+    generator = TensorGenerator(l_basis, index_dof_trial)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ... loop over trials
+    stmts = [loop]
+    iterator  = TensorIterator(a_basis_v)
+    generator = TensorGenerator(l_basis_v, index_dof_test)
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    # ...
+    stmts = [loop]
+    iterator  = (TensorIterator(l_quad),
+                 TensorIterator(l_basis),
+                 TensorIterator(span),
+                 TensorIterator(l_basis_v),
+                )
+    generator = (TensorGenerator(g_quad, index_element),
+                 TensorGenerator(g_basis, index_element),
+                 TensorGenerator(g_span, index_element),
+                 TensorGenerator(g_basis_v, index_element),
+                )
+    loop      = Loop(iterator, generator, stmts)
+    # ...
+
+    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    print(pycode(stmt))
+    print()
+
+#==============================================================================
+def test_global_quad_basis_span_2d_vector():
     # ...
     nderiv = 2
     stmts = construct_logical_expressions(u, nderiv)
@@ -486,8 +558,9 @@ def teardown_function():
 
 
 #==============================================================================
-test_global_quad_basis_span_2d_3()
-import sys; sys.exit(0)
+#test_global_quad_basis_span_2d_vector()
+#test_global_quad_basis_span_2d_matrix()
+#import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()
