@@ -1117,3 +1117,190 @@ def construct_itergener(a, index):
     # ...
 
     return iterator, generator
+
+
+#==============================================================================
+def is_scalar_field(expr):
+
+    if isinstance(expr, _partial_derivatives):
+        return is_scalar_field(expr.args[0])
+
+    elif isinstance(expr, _logical_partial_derivatives):
+        return is_scalar_field(expr.args[0])
+
+    elif isinstance(expr, ScalarField):
+        return True
+
+    return False
+
+#==============================================================================
+def is_vector_field(expr):
+
+    if isinstance(expr, _partial_derivatives):
+        return is_vector_field(expr.args[0])
+
+    elif isinstance(expr, _logical_partial_derivatives):
+        return is_vector_field(expr.args[0])
+
+    elif isinstance(expr, (VectorField, IndexedVectorField)):
+        return True
+
+    return False
+
+#==============================================================================
+from sympy import Matrix, ImmutableDenseMatrix
+from sympy import symbols
+from pyccel.ast.core      import _atomic
+from sympde.expr import TerminalExpr
+from sympde.expr import LinearForm
+from sympde.topology             import element_of
+from sympde.topology             import ScalarField
+from sympde.topology             import VectorField, IndexedVectorField
+from sympde.topology.space       import ScalarTestFunction
+from sympde.topology.space       import VectorTestFunction
+from sympde.topology.space       import IndexedTestTrial
+from sympde.topology.derivatives import _partial_derivatives
+from sympde.topology.derivatives import _logical_partial_derivatives
+from sympde.topology.derivatives import get_max_partial_derivatives
+class AST(object):
+    """
+    """
+    def __init__(self, expr):
+        # ... compute terminal expr
+        # TODO check that we have one single domain/interface/boundary
+        terminal_expr = TerminalExpr(expr)
+        domain        = terminal_expr[0].target
+        terminal_expr = terminal_expr[0].expr
+
+        print('> terminal expr = ', terminal_expr)
+        # ...
+
+        # ... compute max deriv
+        nderiv = 0
+        if isinstance(terminal_expr, Matrix):
+            n_rows, n_cols = terminal_expr.shape
+            for i_row in range(0, n_rows):
+                for i_col in range(0, n_cols):
+                    d = get_max_partial_derivatives(terminal_expr[i_row,i_col])
+                    nderiv = max(nderiv, max(d.values()))
+        else:
+            d = get_max_partial_derivatives(terminal_expr)
+            nderiv = max(nderiv, max(d.values()))
+
+        print('> nderiv = ', nderiv)
+        # ...
+
+        # ...
+        is_bilinear   = False
+        is_linear     = False
+        is_functional = False
+        tests         = None
+        trials        = None
+
+        if isinstance(expr, LinearForm):
+            is_linear = True
+            tests     = expr.test_functions
+        # ...
+
+        # ...
+        atoms_types = (_partial_derivatives,
+                       VectorTestFunction,
+                       ScalarTestFunction,
+                       IndexedTestTrial,
+                       ScalarField,
+                       VectorField, IndexedVectorField)
+
+        atoms  = _atomic(expr, cls=atoms_types)
+        # ...
+
+        # ...
+        atomic_expr_field        = [atom for atom in atoms if is_scalar_field(atom)]
+        atomic_expr_vector_field = [atom for atom in atoms if is_vector_field(atom)]
+
+        atomic_expr = [atom for atom in atoms if not( atom in atomic_expr_field ) and
+                                                 not( atom in atomic_expr_vector_field)]
+        # ...
+
+        # ...
+        d_tests = {}
+        for v in tests:
+            d = {}
+            d['global'] = GlobalTensorQuadratureTestBasis(v)
+            d['local']  = LocalTensorQuadratureTestBasis(v)
+            d['array']  = TensorQuadratureTestBasis(v)
+            d['basis']  = TensorTestBasis(v)
+            d['span']   = GlobalSpan(v)
+
+            d_tests[v] = d
+        # ...
+
+        if is_linear:
+            ast = _create_ast_linear_form(terminal_expr, atomic_expr, tests, d_tests,
+                                          nderiv, domain.dim)
+
+        self._expr   = ast
+        self._nderiv = nderiv
+        self._domain = domain
+
+    @property
+    def expr(self):
+        return self._expr
+
+    @property
+    def nderiv(self):
+        return self._nderiv
+
+    @property
+    def domain(self):
+        return self._domain
+
+    @property
+    def dim(self):
+        return self.domain.dim
+
+
+#==============================================================================
+def _create_ast_linear_form(terminal_expr, atomic_expr, tests, d_tests, nderiv, dim):
+    pads   = symbols('p1, p2, p3')[:dim]
+    g_quad = GlobalTensorQuadrature()
+    l_quad = LocalTensorQuadrature()
+
+    # ...
+    stmts = []
+    for v in tests:
+        stmts += construct_logical_expressions(v, nderiv)
+
+    stmts += [ComputePhysicalBasis(i) for i in atomic_expr]
+    # ...
+
+    # ...
+    a_basis = tuple([d['array'] for v,d in d_tests.items()])
+
+    loop  = Loop((l_quad, *a_basis), index_quad, stmts)
+    # ...
+
+    # ... TODO
+    l_vec = StencilVectorLocalBasis(pads)
+    loop = Reduce('+', ComputeKernelExpr(terminal_expr), ElementOf(l_vec), loop)
+    # ...
+
+    # ... loop over tests
+    l_basis = tuple([d['local'] for v,d in d_tests.items()])
+    stmts = [loop]
+    loop  = Loop(l_basis, index_dof_test, stmts)
+    # ...
+
+    # ...
+    g_basis = tuple([d['global'] for v,d in d_tests.items()])
+    g_span  = tuple([d['span']   for v,d in d_tests.items()])
+    stmts = [loop]
+    loop  = Loop((g_quad, *g_basis, *g_span), index_element, stmts)
+    # ...
+
+    # ... TODO
+    g_vec = StencilVectorGlobalBasis(pads)
+    loop = Reduce('+', l_vec, g_vec, loop)
+    # ...
+
+    return loop
+

@@ -17,6 +17,9 @@ from sympde.topology import ScalarFunctionSpace
 from sympde.topology import element_of, elements_of
 from sympde.topology import Square
 from sympde.topology import Mapping
+from sympde.expr     import integral
+from sympde.expr     import LinearForm
+from sympde.expr     import BilinearForm
 
 from nodes import Grid
 from nodes import Element
@@ -70,6 +73,7 @@ from nodes import StencilVectorGlobalBasis
 from nodes import ElementOf
 from nodes import WeightedVolumeQuadrature
 from nodes import ComputeKernelExpr
+from nodes import AST
 
 from parser import parse
 
@@ -543,6 +547,17 @@ def test_global_quad_basis_span_2d_matrix_2():
     print()
 
 #==============================================================================
+def test_assembly_linear_form_2d_1():
+    b = LinearForm(v, integral(domain, v*cos(x)))
+    ast = AST(b)
+
+    stmt = parse(ast.expr, settings={'dim': ast.dim, 'nderiv': ast.nderiv})
+    print(pycode(stmt))
+    print()
+
+
+
+#==============================================================================
 # CLEAN UP SYMPY NAMESPACE
 #==============================================================================
 
@@ -556,7 +571,8 @@ def teardown_function():
 
 
 #==============================================================================
-#test_global_quad_basis_span_2d_vector_1()
+#test_assembly_linear_form_2d_1()
+##test_global_quad_basis_span_2d_vector_1()
 ##test_global_quad_basis_span_2d_vector_2()
 ##test_global_quad_basis_span_2d_matrix_1()
 ##test_global_quad_basis_span_2d_matrix_2()
