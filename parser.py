@@ -12,6 +12,7 @@ from pyccel.ast import Assign
 from pyccel.ast import AugAssign
 from pyccel.ast import Variable, IndexedVariable, IndexedElement
 from pyccel.ast import Slice
+from pyccel.ast import EmptyLine
 
 from sympde.topology import (dx, dy, dz)
 from sympde.topology import (dx1, dx2, dx3)
@@ -112,7 +113,7 @@ class Parser(object):
             mapping = settings.pop('mapping', None)
 
         if mapping is None:
-            mapping = IdentityMapping('Map', dim)
+            mapping = IdentityMapping('M', dim)
 
         self._mapping = mapping
         # ...
@@ -575,7 +576,7 @@ class Parser(object):
 
     # ....................................................
     def _visit_ComputePhysicalBasis(self, expr, op=None, lhs=None, **kwargs):
-        expr = expr.expr
+        expr   = expr.expr
         if lhs is None:
             if not isinstance(expr, (Add, Mul)):
                 lhs = self._visit(BasisAtom(expr), **kwargs)
@@ -584,6 +585,30 @@ class Parser(object):
                 lhs = Symbol('tmp_{}'.format(lhs))
 
         rhs = self._visit(PhysicalBasisValue(expr), **kwargs)
+
+        if op is None:
+            stmt = Assign(lhs, rhs)
+
+        else:
+            stmt = AugAssign(lhs, op, rhs)
+
+        return self._visit(stmt, **kwargs)
+
+    # ....................................................
+    def _visit_ComputeKernelExpr(self, expr, op=None, lhs=None, **kwargs):
+        expr   = expr.expr
+        if lhs is None:
+            if not isinstance(expr, (Add, Mul)):
+                lhs = self._visit(BasisAtom(expr), **kwargs)
+            else:
+                lhs = random_string( 6 )
+                lhs = Symbol('tmp_{}'.format(lhs))
+
+        weight = SymbolicWeightedVolume(self.mapping)
+        weight = SymbolicExpr(weight)
+
+        rhs  = self._visit(expr, **kwargs)
+        rhs *= weight
 
         if op is None:
             stmt = Assign(lhs, rhs)

@@ -556,6 +556,12 @@ class ComputePhysicalBasis(ComputePhysical):
     pass
 
 #==============================================================================
+class ComputeKernelExpr(ComputeNode):
+    """
+    """
+    pass
+
+#==============================================================================
 class ComputeLogical(ComputeNode):
     """
     """
@@ -935,18 +941,16 @@ class Loop(BaseNode):
         # ...
 
         # ...
+        # TODO add other expressions
         if with_geo:
-            # ... add determinant
-            #     TODO add other expressions
+            # add determinant
             geo_stmts += [ComputeLogical(SymbolicDeterminant(mapping))]
             geo_stmts += [ComputeLogical(SymbolicInverseDeterminant(mapping))]
             geo_stmts += [ComputeLogical(SymbolicWeightedVolume(mapping))]
-
-            stmts = geo_stmts + stmts
-            # ...
         # ...
 
         # ...
+        stmts = geo_stmts + stmts
         stmts = Tuple(*stmts)
         # ...
 

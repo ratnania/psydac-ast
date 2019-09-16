@@ -68,6 +68,8 @@ from nodes import StencilVectorLocalBasis
 from nodes import StencilMatrixGlobalBasis
 from nodes import StencilVectorGlobalBasis
 from nodes import ElementOf
+from nodes import WeightedVolumeQuadrature
+from nodes import ComputeKernelExpr
 
 from parser import parse
 
@@ -400,7 +402,7 @@ def test_global_quad_basis_span_2d_vector_1():
     # ...
 
     # ...
-    loop = Reduce('+', ComputePhysicalBasis(dx(v)*cos(x+y)), ElementOf(l_vec), loop)
+    loop = Reduce('+', ComputeKernelExpr(dx(v)*cos(x+y)), ElementOf(l_vec), loop)
     # ...
 
     # ... loop over tests
@@ -437,7 +439,7 @@ def test_global_quad_basis_span_2d_vector_2():
     # ...
 
     # ...
-    loop = Reduce('+', ComputePhysicalBasis(dx(v)*cos(x+y)), ElementOf(l_vec), loop)
+    loop = Reduce('+', ComputeKernelExpr(dx(v)*cos(x+y)), ElementOf(l_vec), loop)
     # ...
 
     # ... loop over tests
@@ -473,7 +475,7 @@ def test_global_quad_basis_span_2d_matrix_1():
     # ...
 
     # ...
-    loop = Reduce('+', ComputePhysicalBasis(dx(u)*dx(v)), ElementOf(l_mat), loop)
+    loop = Reduce('+', ComputeKernelExpr(dx(u)*dx(v)), ElementOf(l_mat), loop)
     # ...
 
     # ... loop over trials
@@ -514,7 +516,7 @@ def test_global_quad_basis_span_2d_matrix_2():
     # ...
 
     # ...
-    loop = Reduce('+', ComputePhysicalBasis(dx(u)*dx(v)), ElementOf(l_mat), loop)
+    loop = Reduce('+', ComputeKernelExpr(dx(u)*dx(v)), ElementOf(l_mat), loop)
     # ...
 
     # ... loop over trials
@@ -554,11 +556,11 @@ def teardown_function():
 
 
 #==============================================================================
-#test_global_quad_basis_span_2d_vector_1()
+test_global_quad_basis_span_2d_vector_1()
 #test_global_quad_basis_span_2d_vector_2()
 #test_global_quad_basis_span_2d_matrix_1()
 #test_global_quad_basis_span_2d_matrix_2()
-#import sys; sys.exit(0)
+import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()
