@@ -555,6 +555,15 @@ def test_assembly_linear_form_2d_1():
     print(pycode(stmt))
     print()
 
+#==============================================================================
+def test_assembly_bilinear_form_2d_1():
+    a = BilinearForm((u,v), integral(domain, dot(grad(u), grad(v))))
+    ast = AST(a)
+
+    stmt = parse(ast.expr, settings={'dim': ast.dim, 'nderiv': ast.nderiv})
+    print(pycode(stmt))
+    print()
+
 
 
 #==============================================================================
@@ -572,11 +581,12 @@ def teardown_function():
 
 #==============================================================================
 #test_assembly_linear_form_2d_1()
+test_assembly_bilinear_form_2d_1()
 ##test_global_quad_basis_span_2d_vector_1()
 ##test_global_quad_basis_span_2d_vector_2()
 ##test_global_quad_basis_span_2d_matrix_1()
 ##test_global_quad_basis_span_2d_matrix_2()
-#import sys; sys.exit(0)
+import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()

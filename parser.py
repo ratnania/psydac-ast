@@ -36,6 +36,10 @@ from nodes import TensorBasis
 from nodes import GlobalTensorQuadrature
 from nodes import LocalTensorQuadrature
 from nodes import LocalTensorQuadratureBasis
+from nodes import LocalTensorQuadratureTestBasis
+from nodes import LocalTensorQuadratureTrialBasis
+from nodes import GlobalTensorQuadratureTestBasis
+from nodes import GlobalTensorQuadratureTrialBasis
 from nodes import TensorQuadratureBasis
 from nodes import index_quad, length_quad
 from nodes import index_dof, index_dof_test, index_dof_trial
@@ -311,10 +315,24 @@ class Parser(object):
         dim = self.dim
         rank = expr.rank
         ln = 1
-        if ln > 1:
-            names = 'global_basis_1:%s(1:%s)'%(dim+1,ln+1)
+
+        if isinstance(expr, GlobalTensorQuadratureTestBasis):
+            if ln > 1:
+                names = 'global_test_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'global_test_basis_1:%s'%(dim+1)
+
+        elif isinstance(expr, GlobalTensorQuadratureTrialBasis):
+            if ln > 1:
+                names = 'global_trial_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'global_trial_basis_1:%s'%(dim+1)
+
         else:
-            names = 'global_basis_1:%s'%(dim+1)
+            if ln > 1:
+                names = 'global_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'global_basis_1:%s'%(dim+1)
 
         target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
         if not isinstance(target[0], (tuple, list, Tuple)):
@@ -329,10 +347,24 @@ class Parser(object):
         dim = self.dim
         rank = expr.rank
         ln = 1
-        if ln > 1:
-            names = 'local_basis_1:%s(1:%s)'%(dim+1,ln+1)
+
+        if isinstance(expr, LocalTensorQuadratureTestBasis):
+            if ln > 1:
+                names = 'local_test_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'local_test_basis_1:%s'%(dim+1)
+
+        elif isinstance(expr, LocalTensorQuadratureTrialBasis):
+            if ln > 1:
+                names = 'local_trial_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'local_trial_basis_1:%s'%(dim+1)
+
         else:
-            names = 'local_basis_1:%s'%(dim+1)
+            if ln > 1:
+                names = 'local_basis_1:%s(1:%s)'%(dim+1,ln+1)
+            else:
+                names = 'local_basis_1:%s'%(dim+1)
 
         target = variables(names, dtype='real', rank=rank, cls=IndexedVariable)
         if not isinstance(target[0], (tuple, list, Tuple)):

@@ -1153,6 +1153,7 @@ from sympy import symbols
 from pyccel.ast.core      import _atomic
 from sympde.expr import TerminalExpr
 from sympde.expr import LinearForm
+from sympde.expr import BilinearForm
 from sympde.topology             import element_of
 from sympde.topology             import ScalarField
 from sympde.topology             import VectorField, IndexedVectorField
@@ -1200,6 +1201,14 @@ class AST(object):
         if isinstance(expr, LinearForm):
             is_linear = True
             tests     = expr.test_functions
+
+        elif isinstance(expr, BilinearForm):
+            is_bilinear = True
+            tests       = expr.test_functions
+            trials      = expr.trial_functions
+
+        else:
+            raise NotImplementedError('TODO')
         # ...
 
         # ...
@@ -1234,9 +1243,34 @@ class AST(object):
             d_tests[v] = d
         # ...
 
+        # ...
+        d_trials = {}
+        for v in trials:
+            d = {}
+            d['global'] = GlobalTensorQuadratureTrialBasis(v)
+            d['local']  = LocalTensorQuadratureTrialBasis(v)
+            d['array']  = TensorQuadratureTrialBasis(v)
+            d['basis']  = TensorTrialBasis(v)
+            d['span']   = GlobalSpan(v)
+
+            d_trials[v] = d
+        # ...
+
+        # ...
         if is_linear:
             ast = _create_ast_linear_form(terminal_expr, atomic_expr, tests, d_tests,
                                           nderiv, domain.dim)
+
+        elif is_bilinear:
+            ast = _create_ast_bilinear_form(terminal_expr, atomic_expr,
+                                            tests, d_tests,
+                                            trials, d_trials,
+                                            nderiv, domain.dim)
+
+
+        else:
+            raise NotImplementedError('TODO')
+        # ...
 
         self._expr   = ast
         self._nderiv = nderiv
@@ -1261,6 +1295,8 @@ class AST(object):
 
 #==============================================================================
 def _create_ast_linear_form(terminal_expr, atomic_expr, tests, d_tests, nderiv, dim):
+    """
+    """
     pads   = symbols('p1, p2, p3')[:dim]
     g_quad = GlobalTensorQuadrature()
     l_quad = LocalTensorQuadrature()
@@ -1304,3 +1340,62 @@ def _create_ast_linear_form(terminal_expr, atomic_expr, tests, d_tests, nderiv, 
 
     return loop
 
+#==============================================================================
+def _create_ast_bilinear_form(terminal_expr, atomic_expr,
+                              tests, d_tests,
+                              trials, d_trials,
+                              nderiv, dim):
+    """
+    """
+    pads   = symbols('p1, p2, p3')[:dim]
+    g_quad = GlobalTensorQuadrature()
+    l_quad = LocalTensorQuadrature()
+
+    # ...
+    stmts = []
+    for v in tests:
+        stmts += construct_logical_expressions(v, nderiv)
+
+    stmts += [ComputePhysicalBasis(i) for i in atomic_expr]
+    # ...
+
+    # ...
+    a_basis_tests  = tuple([d['array'] for v,d in d_tests.items()])
+    a_basis_trials = tuple([d['array'] for v,d in d_trials.items()])
+
+    loop  = Loop((l_quad, *a_basis_tests, *a_basis_trials), index_quad, stmts)
+    # ...
+
+    # ... TODO
+    l_mat = StencilMatrixLocalBasis(pads)
+    loop = Reduce('+', ComputeKernelExpr(terminal_expr), ElementOf(l_mat), loop)
+    # ...
+
+    # ... loop over trials
+    l_basis = tuple([d['local'] for v,d in d_trials.items()])
+    stmts = [loop]
+    loop  = Loop(l_basis, index_dof_trial, stmts)
+    # ...
+
+    # ... loop over tests
+    l_basis = tuple([d['local'] for v,d in d_tests.items()])
+    stmts = [loop]
+    loop  = Loop(l_basis, index_dof_test, stmts)
+    # ...
+
+    # ...
+    g_basis_tests  = tuple([d['global'] for v,d in d_tests.items()])
+    g_basis_trials = tuple([d['global'] for v,d in d_trials.items()])
+    # TODO d_trials or d_tests here?
+    g_span         = tuple([d['span']   for v,d in d_trials.items()])
+    stmts = [loop]
+    loop  = Loop((g_quad, *g_basis_tests, *g_basis_trials, *g_span),
+                 index_element, stmts)
+    # ...
+
+    # ... TODO
+    g_mat = StencilMatrixGlobalBasis(pads)
+    loop = Reduce('+', l_mat, g_mat, loop)
+    # ...
+
+    return loop
