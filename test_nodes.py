@@ -74,6 +74,8 @@ from nodes import ElementOf
 from nodes import WeightedVolumeQuadrature
 from nodes import ComputeKernelExpr
 from nodes import AST
+from nodes import Block
+from nodes import Reset
 
 from parser import parse
 
@@ -415,15 +417,20 @@ def test_global_quad_basis_span_2d_vector_1():
     # ...
 
     # ...
-    stmts = [loop]
+    body  = (Reset(l_vec), loop)
+    stmts = Block(body)
+    # ...
+
+    # ...
     loop  = Loop((g_quad, g_basis_v, g_span), index_element, stmts)
     # ...
 
     # ...
-    loop = Reduce('+', l_vec, g_vec, loop)
+    body = (Reset(g_vec), Reduce('+', l_vec, g_vec, loop))
+    stmt = Block(body)
     # ...
 
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    stmt = parse(stmt, settings={'dim': domain.dim, 'nderiv': nderiv})
     print(pycode(stmt))
     print()
 
@@ -452,15 +459,20 @@ def test_global_quad_basis_span_2d_vector_2():
     # ...
 
     # ...
-    stmts = [loop]
+    body  = (Reset(l_vec), loop)
+    stmts = Block(body)
+    # ...
+
+    # ...
     loop  = Loop((g_quad, g_basis_v, g_span), index_element, stmts)
     # ...
 
     # ...
-    loop = Reduce('+', l_vec, g_vec, loop)
+    body = (Reset(g_vec), Reduce('+', l_vec, g_vec, loop))
+    stmt = Block(body)
     # ...
 
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv, 'mapping': M})
+    stmt = parse(stmt, settings={'dim': domain.dim, 'nderiv': nderiv, 'mapping': M})
     print(pycode(stmt))
     print()
 
@@ -493,15 +505,20 @@ def test_global_quad_basis_span_2d_matrix_1():
     # ...
 
     # ...
-    stmts = [loop]
+    body  = (Reset(l_mat), loop)
+    stmts = Block(body)
+    # ...
+
+    # ...
     loop  = Loop((g_quad, g_basis, g_basis_v, g_span), index_element, stmts)
     # ...
 
     # ...
-    loop = Reduce('+', l_mat, g_mat, loop)
+    body = (Reset(g_mat), Reduce('+', l_mat, g_mat, loop))
+    stmt = Block(body)
     # ...
 
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv})
+    stmt = parse(stmt, settings={'dim': domain.dim, 'nderiv': nderiv})
     print(pycode(stmt))
     print()
 
@@ -534,15 +551,20 @@ def test_global_quad_basis_span_2d_matrix_2():
     # ...
 
     # ...
-    stmts = [loop]
+    body  = (Reset(l_mat), loop)
+    stmts = Block(body)
+    # ...
+
+    # ...
     loop  = Loop((g_quad, g_basis, g_basis_v, g_span), index_element, stmts)
     # ...
 
     # ...
-    loop = Reduce('+', l_mat, g_mat, loop)
+    body = (Reset(g_mat), Reduce('+', l_mat, g_mat, loop))
+    stmt = Block(body)
     # ...
 
-    stmt = parse(loop, settings={'dim': domain.dim, 'nderiv': nderiv, 'mapping': M})
+    stmt = parse(stmt, settings={'dim': domain.dim, 'nderiv': nderiv, 'mapping': M})
     print(pycode(stmt))
     print()
 
@@ -582,10 +604,10 @@ def teardown_function():
 #==============================================================================
 #test_assembly_linear_form_2d_1()
 #test_assembly_bilinear_form_2d_1()
-##test_global_quad_basis_span_2d_vector_1()
-##test_global_quad_basis_span_2d_vector_2()
-##test_global_quad_basis_span_2d_matrix_1()
-##test_global_quad_basis_span_2d_matrix_2()
+#test_global_quad_basis_span_2d_vector_1()
+#test_global_quad_basis_span_2d_vector_2()
+#test_global_quad_basis_span_2d_matrix_1()
+#test_global_quad_basis_span_2d_matrix_2()
 #import sys; sys.exit(0)
 
 # tests without assert

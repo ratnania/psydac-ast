@@ -15,6 +15,15 @@ from sympde.topology import SymbolicInverseDeterminant
 from sympde.topology import SymbolicWeightedVolume
 from sympde.topology import IdentityMapping
 
+#==============================================================================
+# TODO move it
+import string
+import random
+def random_string( n ):
+    chars    = string.ascii_lowercase + string.digits
+    selector = random.SystemRandom()
+    return ''.join( selector.choice( chars ) for _ in range( n ) )
+
 
 #==============================================================================
 class ArityType(with_metaclass(Singleton, Basic)):
@@ -410,7 +419,8 @@ class StencilMatrixLocalBasis(MatrixNode):
 
         pads = Tuple(*pads)
         rank = 2*len(pads)
-        return Basic.__new__(cls, pads, rank)
+        tag  = random_string( 6 )
+        return Basic.__new__(cls, pads, rank, tag)
 
     @property
     def pads(self):
@@ -419,6 +429,10 @@ class StencilMatrixLocalBasis(MatrixNode):
     @property
     def rank(self):
         return self._args[1]
+
+    @property
+    def tag(self):
+        return self._args[2]
 
 #==============================================================================
 class StencilVectorLocalBasis(MatrixNode):
@@ -431,7 +445,8 @@ class StencilVectorLocalBasis(MatrixNode):
 
         pads = Tuple(*pads)
         rank = len(pads)
-        return Basic.__new__(cls, pads, rank)
+        tag  = random_string( 6 )
+        return Basic.__new__(cls, pads, rank, tag)
 
     @property
     def pads(self):
@@ -440,6 +455,10 @@ class StencilVectorLocalBasis(MatrixNode):
     @property
     def rank(self):
         return self._args[1]
+
+    @property
+    def tag(self):
+        return self._args[2]
 
 #==============================================================================
 class StencilMatrixGlobalBasis(MatrixNode):
@@ -452,7 +471,8 @@ class StencilMatrixGlobalBasis(MatrixNode):
 
         pads = Tuple(*pads)
         rank = 2*len(pads)
-        return Basic.__new__(cls, pads, rank)
+        tag  = random_string( 6 )
+        return Basic.__new__(cls, pads, rank, tag)
 
     @property
     def pads(self):
@@ -461,6 +481,10 @@ class StencilMatrixGlobalBasis(MatrixNode):
     @property
     def rank(self):
         return self._args[1]
+
+    @property
+    def tag(self):
+        return self._args[2]
 
 #==============================================================================
 class StencilVectorGlobalBasis(MatrixNode):
@@ -473,7 +497,8 @@ class StencilVectorGlobalBasis(MatrixNode):
 
         pads = Tuple(*pads)
         rank = len(pads)
-        return Basic.__new__(cls, pads, rank)
+        tag  = random_string( 6 )
+        return Basic.__new__(cls, pads, rank, tag)
 
     @property
     def pads(self):
@@ -482,6 +507,10 @@ class StencilVectorGlobalBasis(MatrixNode):
     @property
     def rank(self):
         return self._args[1]
+
+    @property
+    def tag(self):
+        return self._args[2]
 
 #==============================================================================
 class GlobalSpan(ArrayNode):
@@ -620,6 +649,17 @@ class Reduce(Basic):
     @property
     def loop(self):
         return self._args[3]
+
+#==============================================================================
+class Reset(Basic):
+    """
+    """
+    def __new__(cls, expr):
+        return Basic.__new__(cls, expr)
+
+    @property
+    def expr(self):
+        return self._args[0]
 
 #==============================================================================
 class ElementOf(Basic):
@@ -1118,6 +1158,20 @@ def construct_itergener(a, index):
 
     return iterator, generator
 
+#==============================================================================
+class Block(Basic):
+    """
+    """
+    def __new__(cls, body):
+        if not isinstance(body, (list, tuple, Tuple)):
+            body = [body]
+
+        body = Tuple(*body)
+        return Basic.__new__(cls, body)
+
+    @property
+    def body(self):
+        return self._args[0]
 
 #==============================================================================
 def is_scalar_field(expr):
@@ -1173,7 +1227,7 @@ class AST(object):
         domain        = terminal_expr[0].target
         terminal_expr = terminal_expr[0].expr
 
-        print('> terminal expr = ', terminal_expr)
+#        print('> terminal expr = ', terminal_expr)
         # ...
 
         # ... compute max deriv
@@ -1188,7 +1242,7 @@ class AST(object):
             d = get_max_partial_derivatives(terminal_expr)
             nderiv = max(nderiv, max(d.values()))
 
-        print('> nderiv = ', nderiv)
+#        print('> nderiv = ', nderiv)
         # ...
 
         # ...
@@ -1317,6 +1371,9 @@ def _create_ast_linear_form(terminal_expr, atomic_expr, tests, d_tests, nderiv, 
 
     # ... TODO
     l_vec = StencilVectorLocalBasis(pads)
+    # ...
+
+    # ...
     loop = Reduce('+', ComputeKernelExpr(terminal_expr), ElementOf(l_vec), loop)
     # ...
 
@@ -1326,19 +1383,28 @@ def _create_ast_linear_form(terminal_expr, atomic_expr, tests, d_tests, nderiv, 
     loop  = Loop(l_basis, index_dof_test, stmts)
     # ...
 
+    # ... TODO
+    body  = (Reset(l_vec), loop)
+    stmts = Block(body)
+    # ...
+
     # ...
     g_basis = tuple([d['global'] for v,d in d_tests.items()])
     g_span  = tuple([d['span']   for v,d in d_tests.items()])
-    stmts = [loop]
+
     loop  = Loop((g_quad, *g_basis, *g_span), index_element, stmts)
     # ...
 
     # ... TODO
     g_vec = StencilVectorGlobalBasis(pads)
-    loop = Reduce('+', l_vec, g_vec, loop)
     # ...
 
-    return loop
+    # ... TODO
+    body = (Reset(g_vec), Reduce('+', l_vec, g_vec, loop))
+    stmt = Block(body)
+    # ...
+
+    return stmt
 
 #==============================================================================
 def _create_ast_bilinear_form(terminal_expr, atomic_expr,
@@ -1368,6 +1434,9 @@ def _create_ast_bilinear_form(terminal_expr, atomic_expr,
 
     # ... TODO
     l_mat = StencilMatrixLocalBasis(pads)
+    # ...
+
+    # ...
     loop = Reduce('+', ComputeKernelExpr(terminal_expr), ElementOf(l_mat), loop)
     # ...
 
@@ -1383,19 +1452,28 @@ def _create_ast_bilinear_form(terminal_expr, atomic_expr,
     loop  = Loop(l_basis, index_dof_test, stmts)
     # ...
 
+    # ... TODO
+    body  = (Reset(l_mat), loop)
+    stmts = Block(body)
+    # ...
+
     # ...
     g_basis_tests  = tuple([d['global'] for v,d in d_tests.items()])
     g_basis_trials = tuple([d['global'] for v,d in d_trials.items()])
     # TODO d_trials or d_tests here?
     g_span         = tuple([d['span']   for v,d in d_trials.items()])
-    stmts = [loop]
+
     loop  = Loop((g_quad, *g_basis_tests, *g_basis_trials, *g_span),
                  index_element, stmts)
     # ...
 
     # ... TODO
     g_mat = StencilMatrixGlobalBasis(pads)
-    loop = Reduce('+', l_mat, g_mat, loop)
     # ...
 
-    return loop
+    # ... TODO
+    body = (Reset(g_mat), Reduce('+', l_mat, g_mat, loop))
+    stmt = Block(body)
+    # ...
+
+    return stmt

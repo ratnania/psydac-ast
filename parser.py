@@ -13,6 +13,7 @@ from pyccel.ast import AugAssign
 from pyccel.ast import Variable, IndexedVariable, IndexedElement
 from pyccel.ast import Slice
 from pyccel.ast import EmptyLine
+from pyccel.ast import CodeBlock
 
 from sympde.topology import (dx, dy, dz)
 from sympde.topology import (dx1, dx2, dx3)
@@ -48,6 +49,7 @@ from nodes import index_element, length_element
 from nodes import index_deriv
 from nodes import SplitArray
 from nodes import Reduction
+from nodes import Reset
 from nodes import LogicalValueNode
 from nodes import TensorIteration
 from nodes import TensorIterator
@@ -64,6 +66,8 @@ from nodes import Span
 from nodes import Loop
 from nodes import WeightedVolumeQuadrature
 from nodes import ComputeLogical
+from nodes import ElementOf
+from nodes import Block
 
 
 #==============================================================================
@@ -245,6 +249,15 @@ class Parser(object):
     def _visit_Tuple(self, expr, **kwargs):
         args = [self._visit(i) for i in expr]
         return Tuple(*args)
+
+    # ....................................................
+    def _visit_Block(self, expr, **kwargs):
+        body = [self._visit(i) for i in expr.body]
+        if len(body) == 1:
+            return body[0]
+
+        else:
+            return CodeBlock(body)
 
     # ....................................................
     def _visit_Grid(self, expr, **kwargs):
@@ -469,6 +482,20 @@ class Parser(object):
         return target
 
     # ....................................................
+    def _visit_Reset(self, expr, **kwargs):
+        dim  = self.dim
+
+        lhs = expr.expr
+        if isinstance(lhs, ElementOf):
+            lhs = lhs.target
+
+        lhs  = self._visit(lhs, **kwargs)
+        rank = lhs.rank
+        slices  = [Slice(None, None)]*rank
+
+        return Assign(lhs[slices], 0.)
+
+    # ....................................................
     def _visit_Reduce(self, expr, **kwargs):
         op   = expr.op
         lhs  = expr.lhs
@@ -477,7 +504,6 @@ class Parser(object):
 
         stmts = list(loop.stmts) + [Reduction(op, rhs, lhs)]
         loop  = Loop(loop.iterable, loop.index, stmts=stmts)
-
         return self._visit(loop, **kwargs)
 
     # ....................................................
@@ -769,9 +795,8 @@ class Parser(object):
     def _visit_StencilMatrixLocalBasis(self, expr, **kwargs):
         pads = expr.pads
         rank = expr.rank
-
-        name = random_string( 6 )
-        name = 'l_mat_{}'.format(name)
+        tag  = expr.tag
+        name = 'l_mat_{}'.format(tag)
 
         return IndexedVariable(name, dtype='real', rank=rank)
 
@@ -779,9 +804,8 @@ class Parser(object):
     def _visit_StencilVectorLocalBasis(self, expr, **kwargs):
         pads = expr.pads
         rank = expr.rank
-
-        name = random_string( 6 )
-        name = 'l_vec_{}'.format(name)
+        tag  = expr.tag
+        name = 'l_vec_{}'.format(tag)
 
         return IndexedVariable(name, dtype='real', rank=rank)
 
@@ -789,9 +813,8 @@ class Parser(object):
     def _visit_StencilMatrixGlobalBasis(self, expr, **kwargs):
         pads = expr.pads
         rank = expr.rank
-
-        name = random_string( 6 )
-        name = 'g_mat_{}'.format(name)
+        tag  = expr.tag
+        name = 'g_mat_{}'.format(tag)
 
         return IndexedVariable(name, dtype='real', rank=rank)
 
@@ -799,9 +822,8 @@ class Parser(object):
     def _visit_StencilVectorGlobalBasis(self, expr, **kwargs):
         pads = expr.pads
         rank = expr.rank
-
-        name = random_string( 6 )
-        name = 'g_vec_{}'.format(name)
+        tag  = expr.tag
+        name = 'g_vec_{}'.format(tag)
 
         return IndexedVariable(name, dtype='real', rank=rank)
 
@@ -1052,6 +1074,13 @@ class Parser(object):
         # ...
         # visit loop statements
         stmts = self._visit(expr.stmts, **kwargs)
+#        # sometimes we may have a list of list of statements
+#        # where the first list has one element
+#        # this is the case when we return a stmt+loop
+#        # TODO ARA improve
+#        if isinstance(stmts, (list, tuple, Tuple)) and len(stmts) == 1:
+#            if isinstance(stmts[0], (list, tuple, Tuple)):
+#                stmts = stmts[0]
 
         # update with product statements if available
         body = list(p_inits) + list(geo_stmts) + list(stmts)
