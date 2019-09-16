@@ -581,12 +581,12 @@ def teardown_function():
 
 #==============================================================================
 #test_assembly_linear_form_2d_1()
-test_assembly_bilinear_form_2d_1()
+#test_assembly_bilinear_form_2d_1()
 ##test_global_quad_basis_span_2d_vector_1()
 ##test_global_quad_basis_span_2d_vector_2()
 ##test_global_quad_basis_span_2d_matrix_1()
 ##test_global_quad_basis_span_2d_matrix_2()
-import sys; sys.exit(0)
+#import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()
@@ -605,6 +605,8 @@ test_global_quad_basis_span_2d_vector_2()
 test_global_quad_basis_span_2d_matrix_1()
 test_global_quad_basis_span_2d_matrix_2()
 test_loop_local_quad_geometry_2d_1()
+test_assembly_linear_form_2d_1()
+test_assembly_bilinear_form_2d_1()
 #import sys; sys.exit(0)
 
 # tests with assert

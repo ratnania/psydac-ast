@@ -1195,8 +1195,8 @@ class AST(object):
         is_bilinear   = False
         is_linear     = False
         is_functional = False
-        tests         = None
-        trials        = None
+        tests         = []
+        trials        = []
 
         if isinstance(expr, LinearForm):
             is_linear = True
