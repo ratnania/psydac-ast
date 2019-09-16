@@ -59,6 +59,7 @@ from nodes import TensorQuadratureTestBasis, TensorQuadratureTrialBasis
 from nodes import Span
 from nodes import Loop
 from nodes import WeightedVolumeQuadrature
+from nodes import ComputeLogical
 
 
 #==============================================================================
@@ -1006,14 +1007,34 @@ class Parser(object):
             p_inits = [self._visit(i) for i in p_iterations]
         # ...
 
+        # ...
         inits = t_inits
+        # ...
+
+        # ... add weighted volume if local quadrature loop
+        geo_stmts  = []
+        l_quad = list(expr.generator.atoms(LocalTensorQuadrature))
+        if len(l_quad) > 0:
+            assert(len(l_quad) == 1)
+
+            l_quad = l_quad[0]
+            geo_stmts += [ComputeLogical(WeightedVolumeQuadrature(l_quad))]
+
+            # add stmts related to the geometry
+            # TODO add other expressions
+            mapping = self.mapping
+            geo_stmts += [ComputeLogical(SymbolicDeterminant(mapping))]
+            geo_stmts += [ComputeLogical(SymbolicInverseDeterminant(mapping))]
+            geo_stmts += [ComputeLogical(SymbolicWeightedVolume(mapping))]
+            geo_stmts  = [self._visit(i, **kwargs) for i in geo_stmts]
+        # ...
 
         # ...
         # visit loop statements
-        stmts = self._visit(expr.stmts)
+        stmts = self._visit(expr.stmts, **kwargs)
 
         # update with product statements if available
-        body = list(p_inits) + list(stmts)
+        body = list(p_inits) + list(geo_stmts) + list(stmts)
 
         for index, length, init in zip(indices, lengths, inits):
             if len(length) == 1:

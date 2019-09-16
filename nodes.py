@@ -805,113 +805,9 @@ class Loop(BaseNode):
         iterator = []
         generator = []
         for a in iterable:
-            # ... create generator
-            if isinstance(a, GlobalTensorQuadrature):
-                generator += [TensorGenerator(a, index)]
-                element = LocalTensorQuadrature()
-
-            elif isinstance(a, LocalTensorQuadrature):
-                generator += [TensorGenerator(a, index)]
-                element = TensorQuadrature()
-
-            elif isinstance(a, GlobalTensorQuadratureTrialBasis):
-                generator += [TensorGenerator(a, index)]
-                element = LocalTensorQuadratureTrialBasis(a.target)
-
-            elif isinstance(a, LocalTensorQuadratureTrialBasis):
-                generator += [TensorGenerator(a, index)]
-                element = TensorQuadratureTrialBasis(a.target)
-
-            elif isinstance(a, TensorQuadratureTrialBasis):
-                generator += [TensorGenerator(a, index)]
-                element = TensorTrialBasis(a.target)
-
-            elif isinstance(a, GlobalTensorQuadratureTestBasis):
-                generator += [TensorGenerator(a, index)]
-                element = LocalTensorQuadratureTestBasis(a.target)
-
-            elif isinstance(a, LocalTensorQuadratureTestBasis):
-                generator += [TensorGenerator(a, index)]
-                element = TensorQuadratureTestBasis(a.target)
-
-            elif isinstance(a, TensorQuadratureTestBasis):
-                generator += [TensorGenerator(a, index)]
-                element = TensorTestBasis(a.target)
-
-            elif isinstance(a, GlobalTensorQuadratureBasis):
-                generator += [TensorGenerator(a, index)]
-                element = LocalTensorQuadratureBasis(a.target)
-
-            elif isinstance(a, LocalTensorQuadratureBasis):
-                generator += [TensorGenerator(a, index)]
-                element = TensorQuadratureBasis(a.target)
-
-            elif isinstance(a, TensorQuadratureBasis):
-                generator += [TensorGenerator(a, index)]
-                element = TensorBasis(a.target)
-
-            elif isinstance(a, GlobalSpan):
-                generator += [TensorGenerator(a, index)]
-                element = Span(a.target)
-
-            elif isinstance(a, MatrixLocalBasis):
-                generator += [ProductGenerator(a, index)]
-                element = CoefficientBasis(a.target)
-
-            elif isinstance(a, GeometryExpr):
-                generator += [ProductGenerator(a.expr, index)]
-                element = a.atom
-
-            else:
-                raise TypeError('{} not available'.format(type(a)))
-            # ...
-
-            # ... create iterator
-            if isinstance(element, LocalTensorQuadrature):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, TensorQuadrature):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, LocalTensorQuadratureTrialBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, TensorQuadratureTrialBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, TensorTrialBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, LocalTensorQuadratureTestBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, TensorQuadratureTestBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, TensorTestBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, LocalTensorQuadratureBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, TensorQuadratureBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, TensorBasis):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, Span):
-                iterator  += [TensorIterator(element)]
-
-            elif isinstance(element, CoefficientBasis):
-                iterator  += [ProductIterator(element)]
-
-            elif isinstance(element, GeometryAtom):
-                iterator  += [ProductIterator(element)]
-
-            else:
-                raise TypeError('{} not available'.format(type(element)))
-            # ...
+            i,g = construct_itergener(a, index)
+            iterator.append(i)
+            generator.append(g)
         # ...
 
         # ...
@@ -920,37 +816,12 @@ class Loop(BaseNode):
         # ...
 
         # ...
-        geo_stmts = []
         if stmts is None:
             stmts = []
 
         elif not isinstance(stmts, (tuple, list, Tuple)):
             stmts = [stmts]
 
-        stmts = list(stmts)
-        # ...
-
-        # ... add weighted volume if local quadrature loop
-        l_quad = list(iterable.atoms(LocalTensorQuadrature))
-        if len(l_quad) > 0:
-            assert(len(l_quad) == 1)
-
-            l_quad = l_quad[0]
-            stmt  = ComputeLogical(WeightedVolumeQuadrature(l_quad))
-            geo_stmts += [stmt]
-        # ...
-
-        # ...
-        # TODO add other expressions
-        if with_geo:
-            # add determinant
-            geo_stmts += [ComputeLogical(SymbolicDeterminant(mapping))]
-            geo_stmts += [ComputeLogical(SymbolicInverseDeterminant(mapping))]
-            geo_stmts += [ComputeLogical(SymbolicWeightedVolume(mapping))]
-        # ...
-
-        # ...
-        stmts = geo_stmts + stmts
         stmts = Tuple(*stmts)
         # ...
 
@@ -1109,3 +980,117 @@ class GeometryExpressions(Basic):
     @property
     def arguments(self):
         return self._args[0]
+
+#==============================================================================
+def construct_itergener(a, index):
+    """
+    """
+    # ... create generator
+    if isinstance(a, GlobalTensorQuadrature):
+        generator = TensorGenerator(a, index)
+        element = LocalTensorQuadrature()
+
+    elif isinstance(a, LocalTensorQuadrature):
+        generator = TensorGenerator(a, index)
+        element = TensorQuadrature()
+
+    elif isinstance(a, GlobalTensorQuadratureTrialBasis):
+        generator = TensorGenerator(a, index)
+        element = LocalTensorQuadratureTrialBasis(a.target)
+
+    elif isinstance(a, LocalTensorQuadratureTrialBasis):
+        generator = TensorGenerator(a, index)
+        element = TensorQuadratureTrialBasis(a.target)
+
+    elif isinstance(a, TensorQuadratureTrialBasis):
+        generator = TensorGenerator(a, index)
+        element = TensorTrialBasis(a.target)
+
+    elif isinstance(a, GlobalTensorQuadratureTestBasis):
+        generator = TensorGenerator(a, index)
+        element = LocalTensorQuadratureTestBasis(a.target)
+
+    elif isinstance(a, LocalTensorQuadratureTestBasis):
+        generator = TensorGenerator(a, index)
+        element = TensorQuadratureTestBasis(a.target)
+
+    elif isinstance(a, TensorQuadratureTestBasis):
+        generator = TensorGenerator(a, index)
+        element = TensorTestBasis(a.target)
+
+    elif isinstance(a, GlobalTensorQuadratureBasis):
+        generator = TensorGenerator(a, index)
+        element = LocalTensorQuadratureBasis(a.target)
+
+    elif isinstance(a, LocalTensorQuadratureBasis):
+        generator = TensorGenerator(a, index)
+        element = TensorQuadratureBasis(a.target)
+
+    elif isinstance(a, TensorQuadratureBasis):
+        generator = TensorGenerator(a, index)
+        element = TensorBasis(a.target)
+
+    elif isinstance(a, GlobalSpan):
+        generator = TensorGenerator(a, index)
+        element = Span(a.target)
+
+    elif isinstance(a, MatrixLocalBasis):
+        generator = ProductGenerator(a, index)
+        element = CoefficientBasis(a.target)
+
+    elif isinstance(a, GeometryExpr):
+        generator = ProductGenerator(a.expr, index)
+        element = a.atom
+
+    else:
+        raise TypeError('{} not available'.format(type(a)))
+    # ...
+
+    # ... create iterator
+    if isinstance(element, LocalTensorQuadrature):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, TensorQuadrature):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, LocalTensorQuadratureTrialBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, TensorQuadratureTrialBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, TensorTrialBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, LocalTensorQuadratureTestBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, TensorQuadratureTestBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, TensorTestBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, LocalTensorQuadratureBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, TensorQuadratureBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, TensorBasis):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, Span):
+        iterator = TensorIterator(element)
+
+    elif isinstance(element, CoefficientBasis):
+        iterator = ProductIterator(element)
+
+    elif isinstance(element, GeometryAtom):
+        iterator = ProductIterator(element)
+
+    else:
+        raise TypeError('{} not available'.format(type(element)))
+    # ...
+
+    return iterator, generator
