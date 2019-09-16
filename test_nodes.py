@@ -556,11 +556,11 @@ def teardown_function():
 
 
 #==============================================================================
-test_global_quad_basis_span_2d_vector_1()
-#test_global_quad_basis_span_2d_vector_2()
-#test_global_quad_basis_span_2d_matrix_1()
-#test_global_quad_basis_span_2d_matrix_2()
-import sys; sys.exit(0)
+#test_global_quad_basis_span_2d_vector_1()
+##test_global_quad_basis_span_2d_vector_2()
+##test_global_quad_basis_span_2d_matrix_1()
+##test_global_quad_basis_span_2d_matrix_2()
+#import sys; sys.exit(0)
 
 # tests without assert
 test_loop_local_quad_2d_1()

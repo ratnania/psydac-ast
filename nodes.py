@@ -13,6 +13,7 @@ from sympde.topology import Mapping
 from sympde.topology import SymbolicDeterminant
 from sympde.topology import SymbolicInverseDeterminant
 from sympde.topology import SymbolicWeightedVolume
+from sympde.topology import IdentityMapping
 
 
 #==============================================================================
@@ -784,8 +785,6 @@ class Loop(BaseNode):
         with_geo = False # TODO remove
         if len(geos) == 1:
             geos = list(geos[0])
-            with_geo = True
-            mapping = list(iterable.atoms(Mapping))[0]
 
         elif len(geos) > 1:
             raise NotImplementedError('TODO')
@@ -850,6 +849,30 @@ class Loop(BaseNode):
     @property
     def generator(self):
         return self._generator
+
+    def get_geometry_stmts(self, mapping):
+        args = []
+
+        l_quad = list(self.generator.atoms(LocalTensorQuadrature))
+        if len(l_quad) == 0:
+            return Tuple(*args)
+
+        assert(len(l_quad) == 1)
+        l_quad = l_quad[0]
+
+        if isinstance(mapping, IdentityMapping):
+            args += [ComputeLogical(WeightedVolumeQuadrature(l_quad))]
+            return Tuple(*args)
+
+        args += [ComputeLogical(WeightedVolumeQuadrature(l_quad))]
+
+        # add stmts related to the geometry
+        # TODO add other expressions
+        args += [ComputeLogical(SymbolicDeterminant(mapping))]
+        args += [ComputeLogical(SymbolicInverseDeterminant(mapping))]
+        args += [ComputeLogical(SymbolicWeightedVolume(mapping))]
+
+        return Tuple(*args)
 
 #==============================================================================
 class TensorIteration(BaseNode):

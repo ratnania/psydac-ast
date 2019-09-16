@@ -1012,21 +1012,9 @@ class Parser(object):
         # ...
 
         # ... add weighted volume if local quadrature loop
-        geo_stmts  = []
-        l_quad = list(expr.generator.atoms(LocalTensorQuadrature))
-        if len(l_quad) > 0:
-            assert(len(l_quad) == 1)
-
-            l_quad = l_quad[0]
-            geo_stmts += [ComputeLogical(WeightedVolumeQuadrature(l_quad))]
-
-            # add stmts related to the geometry
-            # TODO add other expressions
-            mapping = self.mapping
-            geo_stmts += [ComputeLogical(SymbolicDeterminant(mapping))]
-            geo_stmts += [ComputeLogical(SymbolicInverseDeterminant(mapping))]
-            geo_stmts += [ComputeLogical(SymbolicWeightedVolume(mapping))]
-            geo_stmts  = [self._visit(i, **kwargs) for i in geo_stmts]
+        mapping = self.mapping
+        geo_stmts = expr.get_geometry_stmts(mapping)
+        geo_stmts = self._visit(geo_stmts, **kwargs)
         # ...
 
         # ...
